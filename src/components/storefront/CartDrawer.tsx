@@ -1,0 +1,170 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { useCart } from '@/lib/cart/store';
+
+interface CartDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
+  const { items, subtotal, updateQuantity, removeItem, clearCart } = useCart();
+  const freeShippingThreshold = 300;
+  const progressPercent = Math.min(100, (subtotal / freeShippingThreshold) * 100);
+  const amountNeeded = freeShippingThreshold - subtotal;
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-plum-900/50 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+        <div className="w-screen max-w-md bg-cream-100 shadow-2xl flex flex-col justify-between">
+          
+          {/* Header */}
+          <div className="p-6 border-b border-ink-100 bg-white flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <ShoppingBag className="w-5 h-5 text-plum-800" />
+              <h2 className="font-serif text-xl font-bold text-plum-900">Your Shopping Cart</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-ink-500 hover:text-plum-900 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Free Shipping Progress */}
+          <div className="bg-plum-50 p-4 border-b border-plum-100 text-xs">
+            {amountNeeded > 0 ? (
+              <p className="text-plum-900 font-medium mb-1.5">
+                Add <span className="font-bold text-plum-800">QAR {amountNeeded.toFixed(2)}</span> more to qualify for <span className="font-bold text-emerald-700">FREE Delivery</span>!
+              </p>
+            ) : (
+              <p className="text-emerald-700 font-bold mb-1.5">🎉 Congratulations! You have unlocked FREE Delivery across Qatar.</p>
+            )}
+            <div className="w-full bg-plum-200 h-1.5 rounded-full overflow-hidden">
+              <div
+                className="bg-plum-800 h-full transition-all duration-500 rounded-full"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Items List */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {items.length === 0 ? (
+              <div className="text-center py-12">
+                <ShoppingBag className="w-12 h-12 text-ink-300 mx-auto mb-3 stroke-[1.5]" />
+                <p className="font-serif text-lg font-semibold text-plum-900">Your cart is currently empty</p>
+                <p className="text-xs text-ink-500 mt-1 mb-6">Discover our fresh handcrafted bouquets.</p>
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2.5 bg-plum-800 text-white text-xs font-medium rounded-lg hover:bg-plum-900 transition-colors shadow-sm"
+                >
+                  Start Shopping
+                </button>
+              </div>
+            ) : (
+              items.map((item) => (
+                <div
+                  key={item.product.id}
+                  className="flex items-center space-x-4 bg-white p-3.5 rounded-xl border border-ink-100 shadow-sm"
+                >
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-cream-200 shrink-0">
+                    <Image
+                      src={item.product.main_image_url}
+                      alt={item.product.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-semibold text-plum-900 truncate">
+                      {item.product.name}
+                    </h4>
+                    <p className="text-xs font-bold text-plum-800 mt-0.5">
+                      QAR {item.product.price.toFixed(2)}
+                    </p>
+
+                    <div className="flex items-center space-x-2 mt-2">
+                      <div className="flex items-center border border-ink-100 rounded-md bg-cream-50">
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          className="p-1 text-ink-600 hover:text-plum-800"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="px-2 text-xs font-semibold text-ink-900">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="p-1 text-ink-600 hover:text-plum-800"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => removeItem(item.product.id)}
+                        className="text-ink-400 hover:text-rose-600 transition-colors"
+                        title="Remove item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer Checkout CTA */}
+          {items.length > 0 && (
+            <div className="p-6 bg-white border-t border-ink-100 space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-ink-700 font-medium">Subtotal</span>
+                <span className="font-serif text-lg font-bold text-plum-900">
+                  QAR {subtotal.toFixed(2)}
+                </span>
+              </div>
+              <p className="text-[11px] text-ink-500">
+                Taxes and shipping calculated at checkout.
+              </p>
+
+              <div className="space-y-2">
+                <Link
+                  href="/checkout"
+                  onClick={onClose}
+                  className="w-full py-3 bg-plum-800 text-white font-medium text-xs rounded-xl hover:bg-plum-900 transition-colors flex items-center justify-center space-x-2 shadow-md"
+                >
+                  <span>Proceed to Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <button
+                  onClick={clearCart}
+                  className="w-full py-2 text-xs text-ink-500 hover:text-rose-600 transition-colors text-center"
+                >
+                  Clear Cart
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
