@@ -10,8 +10,6 @@ import {
 } from './storefront';
 import { Category, Collection, Product, BlogPost, SiteSettings } from '@/types';
 
-const isDev = process.env.NODE_ENV !== 'production';
-
 function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return Boolean(url && !url.includes('placeholder.supabase.co'));
@@ -36,8 +34,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     }
   }
 
-  if (isDev) return DEMO_SITE_SETTINGS;
-  return DEMO_SITE_SETTINGS; // Always provide essential site settings fallback to prevent SSR crash
+  return DEMO_SITE_SETTINGS;
 }
 
 export async function getCategories(): Promise<Category[]> {
@@ -51,7 +48,7 @@ export async function getCategories(): Promise<Category[]> {
         .eq('active', true)
         .order('sort_order', { ascending: true });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data as Category[];
       }
     } catch (err) {
@@ -59,8 +56,7 @@ export async function getCategories(): Promise<Category[]> {
     }
   }
 
-  if (isDev) return DEMO_CATEGORIES;
-  return [];
+  return DEMO_CATEGORIES;
 }
 
 export async function getProducts(options?: {
@@ -78,13 +74,24 @@ export async function getProducts(options?: {
         .select('id, name, slug, description, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, created_at, updated_at')
         .eq('active', true);
 
+      if (options?.categorySlug) {
+        const { data: cat } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('slug', options.categorySlug)
+          .single();
+        if (cat?.id) {
+          query = query.eq('category_id', cat.id);
+        }
+      }
+
       if (options?.isFeatured) query = query.eq('is_featured', true);
       if (options?.isNewArrival) query = query.eq('is_new_arrival', true);
       if (options?.limit) query = query.limit(options.limit);
 
       const { data, error } = await query.order('sort_order', { ascending: true });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data as Product[];
       }
     } catch (err) {
@@ -92,15 +99,17 @@ export async function getProducts(options?: {
     }
   }
 
-  if (isDev) {
-    let filtered = [...DEMO_PRODUCTS];
-    if (options?.isFeatured) filtered = filtered.filter((p) => p.is_featured);
-    if (options?.isNewArrival) filtered = filtered.filter((p) => p.is_new_arrival);
-    if (options?.limit) filtered = filtered.slice(0, options.limit);
-    return filtered;
+  let filtered = [...DEMO_PRODUCTS];
+  if (options?.categorySlug) {
+    const cat = DEMO_CATEGORIES.find((c) => c.slug === options.categorySlug);
+    if (cat) {
+      filtered = filtered.filter((p) => p.category_id === cat.id);
+    }
   }
-
-  return [];
+  if (options?.isFeatured) filtered = filtered.filter((p) => p.is_featured);
+  if (options?.isNewArrival) filtered = filtered.filter((p) => p.is_new_arrival);
+  if (options?.limit) filtered = filtered.slice(0, options.limit);
+  return filtered;
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -123,11 +132,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     }
   }
 
-  if (isDev) {
-    return DEMO_PRODUCTS.find((p) => p.slug === slug) || null;
-  }
-
-  return null;
+  return DEMO_PRODUCTS.find((p) => p.slug === slug) || null;
 }
 
 export async function getCollections(type: 'occasion' | 'flower' | 'collection'): Promise<Collection[]> {
@@ -142,7 +147,7 @@ export async function getCollections(type: 'occasion' | 'flower' | 'collection')
         .eq('active', true)
         .order('sort_order', { ascending: true });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data as Collection[];
       }
     } catch (err) {
@@ -150,13 +155,9 @@ export async function getCollections(type: 'occasion' | 'flower' | 'collection')
     }
   }
 
-  if (isDev) {
-    if (type === 'occasion') return DEMO_OCCASIONS;
-    if (type === 'flower') return DEMO_FLOWERS;
-    return DEMO_COLLECTIONS;
-  }
-
-  return [];
+  if (type === 'occasion') return DEMO_OCCASIONS;
+  if (type === 'flower') return DEMO_FLOWERS;
+  return DEMO_COLLECTIONS;
 }
 
 export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
@@ -171,7 +172,7 @@ export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
         .order('published_at', { ascending: false })
         .limit(limit);
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data as BlogPost[];
       }
     } catch (err) {
@@ -179,10 +180,27 @@ export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
     }
   }
 
-  if (isDev) {
-    return DEMO_BLOG_POSTS.slice(0, limit);
+  return DEMO_BLOG_POSTS.slice(0, limit);
+}
+
+export async function getHomepageSections() {
+  'use cache';
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from('homepage_sections')
+        .select('section_key, title, subtitle, is_visible, sort_order, content_json, updated_at')
+        .eq('is_visible', true)
+        .order('sort_order', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return data;
+      }
+    } catch (err) {
+      console.error('[Queries] Error fetching homepage_sections:', err);
+    }
   }
 
   return [];
 }
-

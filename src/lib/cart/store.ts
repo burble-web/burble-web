@@ -22,8 +22,10 @@ function getSnapshot(): CartState {
   return memoryState;
 }
 
+const SERVER_SNAPSHOT: CartState = { items: [], wishlist: [] };
+
 function getServerSnapshot(): CartState {
-  return { items: [], wishlist: [] };
+  return SERVER_SNAPSHOT;
 }
 
 function subscribe(listener: () => void) {
@@ -61,16 +63,24 @@ if (typeof window !== 'undefined') {
 export const cartStore = {
   addItem(product: Product, quantity = 1) {
     const existingIndex = memoryState.items.findIndex((item) => item.product.id === product.id);
+    const newItems = [...memoryState.items];
     if (existingIndex > -1) {
-      memoryState.items[existingIndex].quantity += quantity;
+      newItems[existingIndex] = {
+        ...newItems[existingIndex],
+        quantity: newItems[existingIndex].quantity + quantity,
+      };
     } else {
-      memoryState.items.push({ product, quantity });
+      newItems.push({ product, quantity });
     }
+    memoryState = { ...memoryState, items: newItems };
     emitChange();
   },
 
   removeItem(productId: string) {
-    memoryState.items = memoryState.items.filter((item) => item.product.id !== productId);
+    memoryState = {
+      ...memoryState,
+      items: memoryState.items.filter((item) => item.product.id !== productId),
+    };
     emitChange();
   },
 
@@ -79,24 +89,28 @@ export const cartStore = {
       this.removeItem(productId);
       return;
     }
-    const item = memoryState.items.find((item) => item.product.id === productId);
-    if (item) {
-      item.quantity = quantity;
-      emitChange();
-    }
+    memoryState = {
+      ...memoryState,
+      items: memoryState.items.map((item) =>
+        item.product.id === productId ? { ...item, quantity } : item
+      ),
+    };
+    emitChange();
   },
 
   clearCart() {
-    memoryState.items = [];
+    memoryState = { ...memoryState, items: [] };
     emitChange();
   },
 
   toggleWishlist(productId: string) {
-    if (memoryState.wishlist.includes(productId)) {
-      memoryState.wishlist = memoryState.wishlist.filter((id) => id !== productId);
-    } else {
-      memoryState.wishlist.push(productId);
-    }
+    const exists = memoryState.wishlist.includes(productId);
+    memoryState = {
+      ...memoryState,
+      wishlist: exists
+        ? memoryState.wishlist.filter((id) => id !== productId)
+        : [...memoryState.wishlist, productId],
+    };
     emitChange();
   },
 };
