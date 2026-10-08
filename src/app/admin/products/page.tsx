@@ -1,16 +1,57 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Product, Category } from '@/types';
 import { DEMO_PRODUCTS, DEMO_CATEGORIES } from '@/lib/data/storefront';
-import { Product } from '@/types';
+import {
+  getAdminProductsAction,
+  saveProductAction,
+  deleteProductAction,
+  toggleProductActiveAction,
+  SaveProductPayload,
+} from '@/app/actions/product';
+import { getAdminCategoriesAction } from '@/app/actions/category';
+import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>(DEMO_CATEGORIES);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const [editingProduct, setEditingProduct] = useState<Partial<SaveProductPayload> | null>(null);
+
+  // Media Picker state
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [pickerTargetField, setPickerTargetField] = useState<'main' | 'hover'>('main');
+
+  const loadData = async () => {
+    setLoading(true);
+    const prodRes = await getAdminProductsAction();
+    const catRes = await getAdminCategoriesAction();
+
+    if (catRes.success && catRes.data && catRes.data.length > 0) {
+      setCategories(catRes.data);
+    } else {
+      setCategories(DEMO_CATEGORIES);
+    }
+
+    if (prodRes.success && prodRes.data && prodRes.data.length > 0) {
+      setProducts(prodRes.data);
+    } else {
+      setProducts(DEMO_PRODUCTS);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -23,47 +64,96 @@ export default function AdminProductsPage() {
       description: '',
       price: 250,
       compare_at_price: null,
-      category_id: DEMO_CATEGORIES[0].id,
+      category_id: categories[0]?.id || null,
       is_featured: false,
       is_new_arrival: true,
       stock_status: 'in_stock',
       active: true,
       main_image_url: '/demo-media/product_blush_bouquet.jpg',
+      hover_image_url: null,
       sort_order: 1,
     });
     setModalOpen(true);
   };
 
   const handleEdit = (prod: Product) => {
-    setEditingProduct(prod);
+    setEditingProduct({
+      id: prod.id,
+      name: prod.name,
+      slug: prod.slug,
+      description: prod.description || '',
+      price: prod.price,
+      compare_at_price: prod.compare_at_price,
+      category_id: prod.category_id,
+      is_featured: prod.is_featured,
+      is_new_arrival: prod.is_new_arrival,
+      stock_status: prod.stock_status,
+      active: prod.active,
+      main_image_url: prod.main_image_url,
+      hover_image_url: prod.hover_image_url,
+      sort_order: prod.sort_order,
+    });
     setModalOpen(true);
   };
 
-  const handleToggleActive = (id: string) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p))
-    );
+  const handleToggleActive = async (id: string, currentActive: boolean) => {
+    const res = await toggleProductActiveAction(id, !currentActive);
+    if (res.success) {
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p))
+      );
+      setFeedback({ type: 'success', message: 'Product status updated.' });
+    } else {
+      setFeedback({ type: 'error', message: res.error || 'Failed to update status.' });
+    }
+    setTimeout(() => setFeedback(null), 3000);
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProduct?.name) return;
-
-    if (editingProduct.id) {
-      setProducts((prev) =>
-        prev.map((p) => (p.id === editingProduct.id ? ({ ...p, ...editingProduct } as Product) : p))
-      );
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    const res = await deleteProductAction(id);
+    if (res.success) {
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setFeedback({ type: 'success', message: 'Product deleted successfully.' });
     } else {
-      const newProd: Product = {
-        ...(editingProduct as Product),
-        id: `prod-${Date.now()}`,
-        slug: editingProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setProducts([newProd, ...products]);
+      setFeedback({ type: 'error', message: res.error || 'Failed to delete product.' });
     }
-    setModalOpen(false);
+    setTimeout(() => setFeedback(null), 3000);
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct?.name || editingProduct.price === undefined) return;
+
+    setSaving(true);
+    setFeedback(null);
+
+    const res = await saveProductAction(editingProduct as SaveProductPayload);
+    setSaving(false);
+
+    if (res.success) {
+      setFeedback({ type: 'success', message: 'Product saved successfully!' });
+      setModalOpen(false);
+      loadData();
+      setTimeout(() => setFeedback(null), 3000);
+    } else {
+      setFeedback({ type: 'error', message: res.error || 'Unable to save product. Please check fields.' });
+    }
+  };
+
+  const handleOpenMediaPicker = (field: 'main' | 'hover') => {
+    setPickerTargetField(field);
+    setMediaPickerOpen(true);
+  };
+
+  const handleMediaSelect = (url: string) => {
+    if (editingProduct) {
+      if (pickerTargetField === 'main') {
+        setEditingProduct({ ...editingProduct, main_image_url: url });
+      } else {
+        setEditingProduct({ ...editingProduct, hover_image_url: url });
+      }
+    }
   };
 
   return (
@@ -84,7 +174,19 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
-      {/* Search & Filter Bar */}
+      {feedback && (
+        <div
+          className={`p-4 rounded-xl text-xs font-medium border ${
+            feedback.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
+          }`}
+        >
+          {feedback.message}
+        </div>
+      )}
+
+      {/* Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-ink-100 shadow-xs flex items-center max-w-md">
         <Search className="w-4 h-4 text-ink-400 mr-2" />
         <input
@@ -98,91 +200,105 @@ export default function AdminProductsPage() {
 
       {/* Products Table */}
       <div className="bg-white rounded-3xl p-6 border border-ink-100 shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4">Product</th>
-                <th className="py-3 px-4">Price</th>
-                <th className="py-3 px-4">Stock</th>
-                <th className="py-3 px-4">Badges</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-cream-50 transition-colors">
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
-                        <Image src={product.main_image_url} alt={product.name} fill className="object-cover" />
+        {loading ? (
+          <div className="py-12 flex flex-col items-center justify-center text-ink-400">
+            <Loader2 className="w-6 h-6 animate-spin mb-2" />
+            <span className="text-xs font-medium">Loading catalog products...</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
+                  <th className="py-3 px-4">Product</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Stock</th>
+                  <th className="py-3 px-4">Badges</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-cream-50 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
+                          <Image src={product.main_image_url} alt={product.name} fill className="object-cover" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-plum-900">{product.name}</p>
+                          <p className="text-[11px] text-ink-500 font-mono">/{product.slug}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-plum-900">{product.name}</p>
-                        <p className="text-[11px] text-ink-500 font-mono">/{product.slug}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 font-bold text-plum-900">
-                    QAR {product.price.toFixed(2)}
-                    {product.compare_at_price && (
-                      <span className="text-[11px] text-ink-400 line-through ml-1 font-normal">
-                        QAR {product.compare_at_price.toFixed(2)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        product.stock_status === 'in_stock'
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : 'bg-rose-50 text-rose-800 border border-rose-200'
-                      }`}
-                    >
-                      {product.stock_status === 'in_stock' ? 'In Stock' : 'Out of Stock'}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 space-x-1">
-                    {product.is_featured && (
-                      <span className="bg-plum-100 text-plum-900 px-2 py-0.5 rounded-md text-[10px] font-bold">Featured</span>
-                    )}
-                    {product.is_new_arrival && (
-                      <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md text-[10px] font-bold">New</span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <button
-                      onClick={() => handleToggleActive(product.id)}
-                      className="flex items-center space-x-1 text-xs font-semibold focus:outline-none"
-                    >
-                      {product.active ? (
-                        <span className="text-emerald-700 flex items-center space-x-1">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>Active</span>
-                        </span>
-                      ) : (
-                        <span className="text-ink-400 flex items-center space-x-1">
-                          <XCircle className="w-4 h-4" />
-                          <span>Inactive</span>
+                    </td>
+                    <td className="py-3.5 px-4 font-bold text-plum-900">
+                      QAR {product.price.toFixed(2)}
+                      {product.compare_at_price && (
+                        <span className="text-[11px] text-ink-400 line-through ml-1 font-normal">
+                          QAR {product.compare_at_price.toFixed(2)}
                         </span>
                       )}
-                    </button>
-                  </td>
-                  <td className="py-3.5 px-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleEdit(product)}
-                      className="p-1.5 text-plum-800 hover:bg-plum-100 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          product.stock_status === 'in_stock'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-800 border border-rose-200'
+                        }`}
+                      >
+                        {product.stock_status === 'in_stock' ? 'In Stock' : 'Out of Stock'}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 space-x-1">
+                      {product.is_featured && (
+                        <span className="bg-plum-100 text-plum-900 px-2 py-0.5 rounded-md text-[10px] font-bold">Featured</span>
+                      )}
+                      {product.is_new_arrival && (
+                        <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md text-[10px] font-bold">New</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <button
+                        onClick={() => handleToggleActive(product.id, product.active)}
+                        className="flex items-center space-x-1 text-xs font-semibold focus:outline-none"
+                      >
+                        {product.active ? (
+                          <span className="text-emerald-700 flex items-center space-x-1">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Active</span>
+                          </span>
+                        ) : (
+                          <span className="text-ink-400 flex items-center space-x-1">
+                            <XCircle className="w-4 h-4" />
+                            <span>Inactive</span>
+                          </span>
+                        )}
+                      </button>
+                    </td>
+                    <td className="py-3.5 px-4 text-right space-x-1">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="p-1.5 text-plum-800 hover:bg-plum-100 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="p-1.5 text-rose-700 hover:bg-rose-100 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Product Edit Modal */}
@@ -221,8 +337,9 @@ export default function AdminProductsPage() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     required
-                    value={editingProduct.price || 0}
+                    value={editingProduct.price ?? 0}
                     onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })}
                     className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
                   />
@@ -233,22 +350,94 @@ export default function AdminProductsPage() {
                   <input
                     type="number"
                     step="0.01"
-                    value={editingProduct.compare_at_price || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, compare_at_price: e.target.value ? parseFloat(e.target.value) : null })}
+                    value={editingProduct.compare_at_price ?? ''}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        compare_at_price: e.target.value ? parseFloat(e.target.value) : null,
+                      })
+                    }
                     className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1">Category</label>
+                  <select
+                    value={editingProduct.category_id || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, category_id: e.target.value || null })}
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  >
+                    <option value="">No Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1">Stock Status</label>
+                  <select
+                    value={editingProduct.stock_status || 'in_stock'}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        stock_status: e.target.value as 'in_stock' | 'out_of_stock',
+                      })
+                    }
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  >
+                    <option value="in_stock">In Stock</option>
+                    <option value="out_of_stock">Out of Stock</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Main Image with Cloudinary Picker */}
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Main Image URL / Cloudinary Path *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingProduct.main_image_url || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, main_image_url: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
-                />
+                <label className="block font-semibold text-plum-900 mb-1">Main Image (Cloudinary URL) *</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    required
+                    value={editingProduct.main_image_url || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, main_image_url: e.target.value })}
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleOpenMediaPicker('main')}
+                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shrink-0"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Choose</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Hover Image */}
+              <div>
+                <label className="block font-semibold text-plum-900 mb-1">Hover Image (Optional)</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={editingProduct.hover_image_url || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, hover_image_url: e.target.value })}
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleOpenMediaPicker('hover')}
+                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shrink-0"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Choose</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center space-x-6 pt-2">
@@ -293,15 +482,25 @@ export default function AdminProductsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-plum-900 hover:bg-plum-800 text-white font-semibold shadow-md"
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-xl bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white font-semibold shadow-md flex items-center space-x-2"
                 >
-                  Save Product
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{saving ? 'Saving...' : 'Save Product'}</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={handleMediaSelect}
+        title={`Select ${pickerTargetField === 'main' ? 'Main' : 'Hover'} Product Image`}
+      />
     </div>
   );
 }

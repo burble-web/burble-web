@@ -16,6 +16,8 @@ import {
   Menu,
   X,
   ExternalLink,
+  Layers,
+  BookOpen,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -23,6 +25,8 @@ const ADMIN_NAV = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Categories', href: '/admin/categories', icon: FolderTree },
+  { name: 'Collections', href: '/admin/collections', icon: Layers },
+  { name: 'Blog Posts', href: '/admin/blog', icon: BookOpen },
   { name: 'Homepage CMS', href: '/admin/cms', icon: Sliders },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { name: 'Media Library', href: '/admin/media', icon: ImageIcon },

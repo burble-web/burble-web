@@ -1,13 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sliders, Eye, EyeOff, Save, Check, Loader2 } from 'lucide-react';
+import { Sliders, Eye, EyeOff, Save, Check, Loader2, Image as ImageIcon } from 'lucide-react';
 import { saveCmsConfigurationAction } from '@/app/actions/cms';
+import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminCMSPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [pickerTargetField, setPickerTargetField] = useState<'desktop' | 'mobile'>('desktop');
 
   const [cmsData, setCmsData] = useState({
     announcementText: 'Fresh Flowers Sourced Daily • Same-Day Delivery • Premium Quality • Beautifully Wrapped',
@@ -41,6 +45,10 @@ export default function AdminCMSPage() {
     }
   };
 
+  const handleOpenPicker = (field: 'desktop' | 'mobile') => {
+    setPickerTargetField(field);
+    setMediaPickerOpen(true);
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -150,22 +158,42 @@ export default function AdminCMSPage() {
 
             <div>
               <label className="block font-semibold text-plum-900 mb-1">Desktop Background Image (Cloudinary / URL)</label>
-              <input
-                type="text"
-                value={cmsData.heroDesktopImage}
-                onChange={(e) => setCmsData({ ...cmsData, heroDesktopImage: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={cmsData.heroDesktopImage}
+                  onChange={(e) => setCmsData({ ...cmsData, heroDesktopImage: e.target.value })}
+                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker('desktop')}
+                  className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shrink-0"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Choose</span>
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="block font-semibold text-plum-900 mb-1">Mobile Background Image (Portrait 9:16)</label>
-              <input
-                type="text"
-                value={cmsData.heroMobileImage}
-                onChange={(e) => setCmsData({ ...cmsData, heroMobileImage: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={cmsData.heroMobileImage}
+                  onChange={(e) => setCmsData({ ...cmsData, heroMobileImage: e.target.value })}
+                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker('mobile')}
+                  className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shrink-0"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Choose</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -229,6 +257,19 @@ export default function AdminCMSPage() {
         </div>
 
       </form>
+
+      <MediaPickerModal
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={(url) => {
+          if (pickerTargetField === 'desktop') {
+            setCmsData({ ...cmsData, heroDesktopImage: url });
+          } else {
+            setCmsData({ ...cmsData, heroMobileImage: url });
+          }
+        }}
+        title={`Select ${pickerTargetField === 'desktop' ? 'Desktop' : 'Mobile'} Hero Image`}
+      />
     </div>
   );
 }

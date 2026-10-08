@@ -2,71 +2,71 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon } from 'lucide-react';
-import { DEMO_CATEGORIES } from '@/lib/data/storefront';
-import { Category } from '@/types';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon, BookOpen } from 'lucide-react';
+import { BlogPost } from '@/types';
+import { DEMO_BLOG_POSTS } from '@/lib/data/storefront';
 import {
-  getAdminCategoriesAction,
-  saveCategoryAction,
-  deleteCategoryAction,
-  SaveCategoryPayload,
-} from '@/app/actions/category';
+  getAdminBlogPostsAction,
+  saveBlogPostAction,
+  deleteBlogPostAction,
+  SaveBlogPostPayload,
+} from '@/app/actions/blog';
 import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
-export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+export default function AdminBlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const [editingCategory, setEditingCategory] = useState<Partial<SaveCategoryPayload>>({});
+  const [editingPost, setEditingPost] = useState<Partial<SaveBlogPostPayload>>({});
 
-  const loadCategories = async () => {
+  const loadPosts = async () => {
     setLoading(true);
-    const res = await getAdminCategoriesAction();
+    const res = await getAdminBlogPostsAction();
     if (res.success && res.data && res.data.length > 0) {
-      setCategories(res.data);
+      setPosts(res.data);
     } else {
-      setCategories(DEMO_CATEGORIES);
+      setPosts(DEMO_BLOG_POSTS);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    loadCategories();
+    loadPosts();
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCategory.name) return;
+    if (!editingPost.title || !editingPost.content) return;
 
     setSaving(true);
     setFeedback(null);
 
-    const res = await saveCategoryAction(editingCategory as SaveCategoryPayload);
+    const res = await saveBlogPostAction(editingPost as SaveBlogPostPayload);
     setSaving(false);
 
     if (res.success) {
-      setFeedback({ type: 'success', message: 'Category saved successfully!' });
+      setFeedback({ type: 'success', message: 'Blog post saved successfully!' });
       setModalOpen(false);
-      loadCategories();
+      loadPosts();
       setTimeout(() => setFeedback(null), 3000);
     } else {
-      setFeedback({ type: 'error', message: res.error || 'Failed to save category.' });
+      setFeedback({ type: 'error', message: res.error || 'Failed to save blog post.' });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
-    const res = await deleteCategoryAction(id);
+    if (!confirm('Are you sure you want to delete this blog post?')) return;
+    const res = await deleteBlogPostAction(id);
     if (res.success) {
-      setFeedback({ type: 'success', message: 'Category deleted.' });
-      loadCategories();
+      setFeedback({ type: 'success', message: 'Blog post deleted.' });
+      loadPosts();
       setTimeout(() => setFeedback(null), 3000);
     } else {
-      setFeedback({ type: 'error', message: res.error || 'Failed to delete category.' });
+      setFeedback({ type: 'error', message: res.error || 'Failed to delete blog post.' });
     }
   };
 
@@ -74,25 +74,26 @@ export default function AdminCategoriesPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-plum-900">Categories Management</h1>
-          <p className="text-xs text-ink-500 mt-1">Organize products into store categories and occasions.</p>
+          <h1 className="font-serif text-3xl font-bold text-plum-900">Blog Posts Management</h1>
+          <p className="text-xs text-ink-500 mt-1">Publish floral care guides, news, and storytelling articles.</p>
         </div>
 
         <button
           onClick={() => {
-            setEditingCategory({
-              name: '',
-              description: '',
-              image_url: '/demo-media/product_blush_bouquet.jpg',
-              sort_order: categories.length + 1,
-              active: true,
+            setEditingPost({
+              title: '',
+              excerpt: '',
+              content: '',
+              cover_image: '/demo-media/product_blush_bouquet.jpg',
+              author: 'Burble Florist',
+              is_published: true,
             });
             setModalOpen(true);
           }}
           className="inline-flex items-center space-x-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-5 py-3 rounded-xl shadow-sm"
         >
           <Plus className="w-4 h-4" />
-          <span>Add Category</span>
+          <span>New Blog Post</span>
         </button>
       </div>
 
@@ -112,61 +113,63 @@ export default function AdminCategoriesPage() {
         {loading ? (
           <div className="py-12 flex flex-col items-center justify-center text-ink-400">
             <Loader2 className="w-6 h-6 animate-spin mb-2" />
-            <span className="text-xs font-medium">Loading categories...</span>
+            <span className="text-xs font-medium">Loading blog posts...</span>
           </div>
         ) : (
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4">Category</th>
-                <th className="py-3 px-4">Slug</th>
-                <th className="py-3 px-4">Sort Order</th>
+                <th className="py-3 px-4">Article</th>
+                <th className="py-3 px-4">Author</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
-              {categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-cream-50 transition-colors">
+              {posts.map((post) => (
+                <tr key={post.id} className="hover:bg-cream-50 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-plum-900">
                     <div className="flex items-center space-x-3">
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
+                      <div className="relative w-12 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
                         <Image
-                          src={cat.image_url || '/demo-media/product_blush_bouquet.jpg'}
-                          alt={cat.name}
+                          src={post.cover_image || '/demo-media/product_blush_bouquet.jpg'}
+                          alt={post.title}
                           fill
                           className="object-cover"
                         />
                       </div>
-                      <span>{cat.name}</span>
+                      <div>
+                        <p>{post.title}</p>
+                        <p className="text-[11px] text-ink-500 font-mono">/{post.slug}</p>
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4 font-mono text-ink-500">/{cat.slug}</td>
-                  <td className="py-3.5 px-4 font-bold">{cat.sort_order}</td>
+                  <td className="py-3.5 px-4 font-semibold text-plum-800">{post.author}</td>
                   <td className="py-3.5 px-4">
-                    {cat.active ? (
+                    {post.is_published ? (
                       <span className="text-emerald-700 flex items-center space-x-1 font-semibold">
                         <CheckCircle className="w-4 h-4" />
-                        <span>Active</span>
+                        <span>Published</span>
                       </span>
                     ) : (
-                      <span className="text-ink-400 flex items-center space-x-1 font-semibold">
+                      <span className="text-amber-700 flex items-center space-x-1 font-semibold">
                         <XCircle className="w-4 h-4" />
-                        <span>Inactive</span>
+                        <span>Draft</span>
                       </span>
                     )}
                   </td>
                   <td className="py-3.5 px-4 text-right space-x-1">
                     <button
                       onClick={() => {
-                        setEditingCategory({
-                          id: cat.id,
-                          name: cat.name,
-                          slug: cat.slug,
-                          description: cat.description,
-                          image_url: cat.image_url,
-                          sort_order: cat.sort_order,
-                          active: cat.active,
+                        setEditingPost({
+                          id: post.id,
+                          title: post.title,
+                          slug: post.slug,
+                          excerpt: post.excerpt,
+                          content: post.content,
+                          cover_image: post.cover_image,
+                          author: post.author,
+                          is_published: post.is_published,
                         });
                         setModalOpen(true);
                       }}
@@ -176,7 +179,7 @@ export default function AdminCategoriesPage() {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(cat.id)}
+                      onClick={() => handleDelete(post.id)}
                       className="p-1.5 text-rose-700 hover:bg-rose-100 rounded-lg"
                       title="Delete"
                     >
@@ -191,41 +194,52 @@ export default function AdminCategoriesPage() {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-plum-950/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-ink-100">
+        <div className="fixed inset-0 z-50 bg-plum-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-ink-100 max-h-[90vh] overflow-y-auto">
             <h2 className="font-serif text-2xl font-bold text-plum-900 mb-4">
-              {editingCategory.id ? 'Edit Category' : 'Create Category'}
+              {editingPost.id ? 'Edit Blog Post' : 'Create Blog Post'}
             </h2>
 
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Category Name *</label>
+                <label className="block font-semibold text-plum-900 mb-1">Article Title *</label>
                 <input
                   type="text"
                   required
-                  value={editingCategory.name || ''}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                  value={editingPost.title || ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
                   className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Description</label>
-                <input
-                  type="text"
-                  value={editingCategory.description || ''}
-                  onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                <label className="block font-semibold text-plum-900 mb-1">Excerpt / Summary</label>
+                <textarea
+                  rows={2}
+                  value={editingPost.excerpt || ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
                   className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Category Image (Cloudinary URL)</label>
+                <label className="block font-semibold text-plum-900 mb-1">Article Content *</label>
+                <textarea
+                  rows={6}
+                  required
+                  value={editingPost.content || ''}
+                  onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
+                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-plum-900 mb-1">Cover Image (Cloudinary URL)</label>
                 <div className="flex space-x-2">
                   <input
                     type="text"
-                    value={editingCategory.image_url || ''}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, image_url: e.target.value })}
+                    value={editingPost.cover_image || ''}
+                    onChange={(e) => setEditingPost({ ...editingPost, cover_image: e.target.value })}
                     className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
                   />
                   <button
@@ -241,11 +255,11 @@ export default function AdminCategoriesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Display Order</label>
+                  <label className="block font-semibold text-plum-900 mb-1">Author Name</label>
                   <input
-                    type="number"
-                    value={editingCategory.sort_order ?? 0}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })}
+                    type="text"
+                    value={editingPost.author || 'Burble Florist'}
+                    onChange={(e) => setEditingPost({ ...editingPost, author: e.target.value })}
                     className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
                   />
                 </div>
@@ -254,11 +268,11 @@ export default function AdminCategoriesPage() {
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={editingCategory.active ?? true}
-                      onChange={(e) => setEditingCategory({ ...editingCategory, active: e.target.checked })}
+                      checked={editingPost.is_published ?? true}
+                      onChange={(e) => setEditingPost({ ...editingPost, is_published: e.target.checked })}
                       className="text-plum-800 rounded focus:ring-plum-800"
                     />
-                    <span className="font-semibold text-plum-900">Active</span>
+                    <span className="font-semibold text-plum-900">Publish Immediately</span>
                   </label>
                 </div>
               </div>
@@ -267,7 +281,7 @@ export default function AdminCategoriesPage() {
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-ink-200 text-ink-700"
+                  className="px-4 py-2 rounded-xl border border-ink-200 text-ink-700 font-semibold"
                 >
                   Cancel
                 </button>
@@ -277,7 +291,7 @@ export default function AdminCategoriesPage() {
                   className="px-5 py-2 rounded-xl bg-plum-900 text-white font-semibold flex items-center space-x-2 disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{saving ? 'Saving...' : 'Save Category'}</span>
+                  <span>{saving ? 'Saving...' : 'Save Article'}</span>
                 </button>
               </div>
             </form>
@@ -285,12 +299,11 @@ export default function AdminCategoriesPage() {
         </div>
       )}
 
-      {/* Media Picker Modal */}
       <MediaPickerModal
         isOpen={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
-        onSelect={(url) => setEditingCategory({ ...editingCategory, image_url: url })}
-        title="Select Category Image"
+        onSelect={(url) => setEditingPost({ ...editingPost, cover_image: url })}
+        title="Select Blog Cover Image"
       />
     </div>
   );
