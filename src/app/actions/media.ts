@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, verifyAdminServer } from '@/lib/supabase/server';
+import { createClient, createPublicClient, verifyAdminServer } from '@/lib/supabase/server';
 import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 
@@ -14,6 +14,41 @@ export interface MediaAssetRecord {
   folder?: string;
   alt_text?: string;
   created_at?: string;
+}
+
+export async function registerMediaAssetAction(asset: {
+  public_id: string;
+  url: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  folder?: string;
+  alt_text?: string;
+}): Promise<{ success: boolean; asset?: MediaAssetRecord; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: mediaRecord, error: dbError } = await supabase
+      .from('media_assets')
+      .upsert({
+        public_id: asset.public_id,
+        url: asset.url,
+        width: asset.width,
+        height: asset.height,
+        format: asset.format,
+        folder: asset.folder || 'burble',
+        alt_text: asset.alt_text,
+      }, { onConflict: 'public_id' })
+      .select()
+      .single();
+
+    if (dbError) {
+      return { success: false, error: dbError.message };
+    }
+
+    return { success: true, asset: mediaRecord as MediaAssetRecord };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to register media asset.' };
+  }
 }
 
 export async function uploadMediaAssetAction(formData: FormData) {
@@ -49,7 +84,10 @@ export async function uploadMediaAssetAction(formData: FormData) {
     // 3. Prepare parameters & signature (sorted alphabetically)
     const timestamp = Math.floor(Date.now() / 1000);
     const folder = 'burble';
-    const publicId = `burble_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const requestedPublicId = formData.get('public_id') as string | null;
+    const requestedAltText = formData.get('alt_text') as string | null;
+
+    const publicId = requestedPublicId || `burble_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     const paramsToSign: Record<string, string> = {
       folder,
@@ -84,24 +122,18 @@ export async function uploadMediaAssetAction(formData: FormData) {
     }
 
     // 5. Store metadata in Supabase media_assets table
-    const supabase = await createClient();
-    const { data: mediaRecord, error: dbError } = await supabase
-      .from('media_assets')
-      .insert({
-        public_id: cldData.public_id,
-        url: cldData.secure_url,
-        width: cldData.width,
-        height: cldData.height,
-        format: cldData.format,
-        folder: folder,
-        alt_text: file.name,
-      })
-      .select()
-      .single();
+    const registerRes = await registerMediaAssetAction({
+      public_id: cldData.public_id,
+      url: cldData.secure_url,
+      width: cldData.width,
+      height: cldData.height,
+      format: cldData.format,
+      folder: folder,
+      alt_text: requestedAltText || file.name,
+    });
 
-    if (dbError) {
-      console.warn('[Media Action] Inserted to Cloudinary but failed DB sync:', dbError.message);
-      // Fallback asset structure
+    if (!registerRes.success) {
+      console.warn('[Media Action] Inserted to Cloudinary but DB sync returned warning:', registerRes.error);
       return {
         success: true,
         asset: {
@@ -111,16 +143,20 @@ export async function uploadMediaAssetAction(formData: FormData) {
           width: cldData.width,
           height: cldData.height,
           format: cldData.format,
-          alt_text: file.name,
+          alt_text: requestedAltText || file.name,
         },
       };
     }
 
-    revalidatePath('/admin/media');
+    try {
+      revalidatePath('/admin/media');
+    } catch {
+      // Revalidation optional outside HTTP request context
+    }
 
     return {
       success: true,
-      asset: mediaRecord as MediaAssetRecord,
+      asset: registerRes.asset!,
     };
   } catch (err: any) {
     console.error('[Upload Media Error]', err);
@@ -130,7 +166,7 @@ export async function uploadMediaAssetAction(formData: FormData) {
 
 export async function getMediaAssetsAction(): Promise<MediaAssetRecord[]> {
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from('media_assets')
       .select('*')
