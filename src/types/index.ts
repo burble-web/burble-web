@@ -1,4 +1,6 @@
 export type UserRole = 'customer' | 'admin';
+export type Locale = 'en' | 'ar';
+export type TextDirection = 'ltr' | 'rtl';
 
 export interface Profile {
   id: string;
@@ -11,11 +13,15 @@ export interface Profile {
 export interface SiteSettings {
   id: number;
   store_name: string;
+  store_name_ar?: string;
   tagline: string;
+  tagline_ar?: string;
   whatsapp_number: string;
   admin_email: string;
   currency_symbol: string;
+  currency_symbol_ar?: string;
   announcement_text: string;
+  announcement_text_ar?: string;
   announcement_enabled: boolean;
   free_shipping_threshold: number;
   flat_shipping_fee: number;
@@ -25,8 +31,10 @@ export interface SiteSettings {
 export interface Category {
   id: string;
   name: string;
+  name_ar?: string;
   slug: string;
   description?: string;
+  description_ar?: string;
   image_url?: string;
   sort_order: number;
   active: boolean;
@@ -36,8 +44,12 @@ export interface Category {
 export interface Product {
   id: string;
   name: string;
+  name_ar?: string;
   slug: string;
   description?: string;
+  description_ar?: string;
+  short_description?: string;
+  short_description_ar?: string;
   price: number;
   compare_at_price?: number | null;
   category_id?: string | null;
@@ -49,6 +61,7 @@ export interface Product {
   main_image_url: string;
   hover_image_url?: string | null;
   sort_order: number;
+  arabic_translation_source?: 'manual' | 'automatic' | 'auto';
   created_at: string;
   updated_at: string;
 }
@@ -58,14 +71,17 @@ export interface ProductImage {
   product_id: string;
   image_url: string;
   alt_text?: string;
+  alt_text_ar?: string;
   sort_order: number;
 }
 
 export interface Collection {
   id: string;
   title: string;
+  title_ar?: string;
   slug: string;
   subtitle?: string;
+  subtitle_ar?: string;
   image_url?: string;
   type: 'occasion' | 'flower' | 'collection';
   sort_order: number;
@@ -76,7 +92,9 @@ export interface HomepageSection {
   id: string;
   section_key: string;
   title: string;
+  title_ar?: string;
   subtitle?: string;
+  subtitle_ar?: string;
   is_visible: boolean;
   sort_order: number;
   content_json: Record<string, any>;
@@ -86,11 +104,15 @@ export interface HomepageSection {
 export interface BlogPost {
   id: string;
   title: string;
+  title_ar?: string;
   slug: string;
   excerpt?: string;
+  excerpt_ar?: string;
   content: string;
+  content_ar?: string;
   cover_image?: string;
   author: string;
+  author_ar?: string;
   is_published: boolean;
   published_at: string;
   created_at: string;
@@ -105,6 +127,7 @@ export interface MediaAsset {
   format?: string;
   folder?: string;
   alt_text?: string;
+  alt_text_ar?: string;
   created_at: string;
 }
 
@@ -116,6 +139,7 @@ export interface OrderItem {
   order_id?: string;
   product_id?: string;
   product_name: string;
+  product_name_ar?: string;
   price: number;
   quantity: number;
   total: number;
@@ -138,6 +162,7 @@ export interface Order {
   total_amount: number;
   status: OrderStatus;
   email_sent: boolean;
+  locale?: Locale;
   created_at: string;
   currency_symbol?: string;
   order_items?: OrderItem[];
@@ -158,4 +183,6 @@ export interface CheckoutFormData {
   pincode?: string;
   delivery_notes?: string;
   payment_method: OrderSource;
+  locale?: Locale;
 }
+

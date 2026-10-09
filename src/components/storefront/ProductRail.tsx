@@ -1,7 +1,10 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Product } from '@/types';
+import { useLocale } from '@/lib/i18n/context';
 import { ProductCard } from './ProductCard';
 
 interface ProductRailProps {
@@ -12,6 +15,8 @@ interface ProductRailProps {
 }
 
 export function ProductRail({ title, subtitle, products, viewAllLink = '/products' }: ProductRailProps) {
+  const { t, isRtl } = useLocale();
+
   if (!products || products.length === 0) return null;
 
   return (
@@ -33,10 +38,10 @@ export function ProductRail({ title, subtitle, products, viewAllLink = '/product
 
           <Link
             href={viewAllLink}
-            className="group flex items-center space-x-1 text-xs font-semibold text-plum-800 hover:text-plum-700 transition-colors"
+            className="group flex items-center space-x-1 rtl:space-x-reverse text-xs font-semibold text-plum-800 hover:text-plum-700 transition-colors"
           >
-            <span>View All</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            <span>{t.common.viewAll}</span>
+            <ArrowRight className={`w-3.5 h-3.5 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
           </Link>
         </div>
 

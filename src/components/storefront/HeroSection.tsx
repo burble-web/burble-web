@@ -4,48 +4,41 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight, Play } from 'lucide-react';
-
-interface HeroSlide {
-  title: string;
-  subtitle: string;
-  eyebrow?: string;
-  desktopImage: string;
-  mobileImage: string;
-  ctaText: string;
-  ctaLink: string;
-}
-
-const HERO_SLIDES: HeroSlide[] = [
-  {
-    eyebrow: 'FLOWERS MAKE MOMENTS SPECIAL',
-    title: 'A Little Thought\nA Big Happiness',
-    subtitle: 'Fresh, handcrafted bouquets to make your special moments unforgettable.',
-    desktopImage: '/demo-media/hero_desktop.jpg',
-    mobileImage: '/demo-media/hero_mobile_v2.jpg',
-    ctaText: 'Shop Flowers',
-    ctaLink: '/products',
-  },
-  {
-    eyebrow: 'EXCLUSIVE FLORAL DESIGNS',
-    title: 'More Than Flowers\nIt\'s a Feeling',
-    subtitle: 'Curated blooms delivered with care to bring beauty to every occasion.',
-    desktopImage: '/demo-media/hero_slide_two.jpg',
-    mobileImage: '/demo-media/hero_slide_two.jpg',
-    ctaText: 'Explore Collections',
-    ctaLink: '/products',
-  }
-];
+import { useLocale } from '@/lib/i18n/context';
 
 export function HeroSection() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const currentSlide = HERO_SLIDES[currentSlideIndex];
+  const { t, isRtl } = useLocale();
+
+  const slides = [
+    {
+      eyebrow: t.hero.slide1Eyebrow,
+      title: t.hero.slide1Title,
+      subtitle: t.hero.slide1Subtitle,
+      desktopImage: '/demo-media/hero_desktop.jpg',
+      mobileImage: '/demo-media/hero_mobile_v2.jpg',
+      ctaText: t.hero.slide1Cta,
+      ctaLink: '/products',
+    },
+    {
+      eyebrow: t.hero.slide2Eyebrow,
+      title: t.hero.slide2Title,
+      subtitle: t.hero.slide2Subtitle,
+      desktopImage: '/demo-media/hero_slide_two.jpg',
+      mobileImage: '/demo-media/hero_slide_two.jpg',
+      ctaText: t.hero.slide2Cta,
+      ctaLink: '/products',
+    },
+  ];
+
+  const currentSlide = slides[currentSlideIndex];
 
   const nextSlide = () => {
-    setCurrentSlideIndex((prev) => (prev + 1) % HERO_SLIDES.length);
+    setCurrentSlideIndex((prev) => (prev + 1) % slides.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlideIndex((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+    setCurrentSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   return (
@@ -60,7 +53,7 @@ export function HeroSection() {
           className="object-cover object-right lg:object-center transition-opacity duration-700 brightness-95"
         />
         {/* Soft gradient overlay for desktop readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-plum-950/85 via-plum-950/40 to-transparent w-full md:w-3/4" />
+        <div className={`absolute inset-0 ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/85 via-plum-950/40 to-transparent w-full md:w-3/4`} />
       </div>
 
       {/* Background Image: Mobile */}
@@ -93,46 +86,46 @@ export function HeroSection() {
             {currentSlide.subtitle}
           </p>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 rtl:space-x-reverse">
             <Link
               href={currentSlide.ctaLink}
-              className="inline-flex items-center space-x-2 bg-plum-800 hover:bg-plum-700 text-white text-xs font-semibold px-6 py-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-plum-800 hover:bg-plum-700 text-white text-xs font-semibold px-6 py-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
             >
               <span>{currentSlide.ctaText}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
             </Link>
 
             <button
-              onClick={() => alert('Video preview coming soon!')}
-              className="inline-flex items-center space-x-2 text-xs text-white/90 hover:text-white bg-white/15 backdrop-blur-md px-4 py-3 rounded-full hover:bg-white/25 transition-all"
+              onClick={() => alert(t.hero.videoComingSoon)}
+              className="inline-flex items-center space-x-2 rtl:space-x-reverse text-xs text-white/90 hover:text-white bg-white/15 backdrop-blur-md px-4 py-3 rounded-full hover:bg-white/25 transition-all"
             >
               <div className="w-6 h-6 rounded-full bg-white text-plum-900 flex items-center justify-center">
-                <Play className="w-3 h-3 fill-current translate-x-0.5" />
+                <Play className={`w-3 h-3 fill-current ${isRtl ? '-translate-x-0.5' : 'translate-x-0.5'}`} />
               </div>
-              <span className="font-medium">Watch Video</span>
+              <span className="font-medium">{t.hero.watchVideo}</span>
             </button>
           </div>
 
           {/* Slider Controls & Counter */}
-          <div className="mt-12 flex items-center space-x-4 text-xs text-plum-200">
+          <div className="mt-12 flex items-center space-x-4 rtl:space-x-reverse text-xs text-plum-200">
             <span className="font-mono font-semibold">
-              0{currentSlideIndex + 1} <span className="opacity-40">/ 0{HERO_SLIDES.length}</span>
+              0{currentSlideIndex + 1} <span className="opacity-40">/ 0{slides.length}</span>
             </span>
 
-            <div className="flex items-center space-x-1.5">
+            <div className="flex items-center space-x-1.5 rtl:space-x-reverse">
               <button
                 onClick={prevSlide}
                 className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Previous slide"
+                aria-label={t.common.previous}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
               </button>
               <button
                 onClick={nextSlide}
                 className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label="Next slide"
+                aria-label={t.common.next}
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
               </button>
             </div>
           </div>

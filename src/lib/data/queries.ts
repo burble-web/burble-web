@@ -22,7 +22,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('site_settings')
-        .select('id, store_name, tagline, whatsapp_number, admin_email, currency_symbol, announcement_text, announcement_enabled, free_shipping_threshold, flat_shipping_fee, updated_at')
+        .select('id, store_name, store_name_ar, tagline, tagline_ar, whatsapp_number, admin_email, currency_symbol, currency_symbol_ar, announcement_text, announcement_text_ar, announcement_enabled, free_shipping_threshold, flat_shipping_fee, updated_at')
         .eq('id', 1)
         .single();
 
@@ -44,7 +44,7 @@ export async function getCategories(): Promise<Category[]> {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('categories')
-        .select('id, name, slug, description, image_url, sort_order, active, created_at')
+        .select('id, name, name_ar, slug, description, description_ar, image_url, sort_order, active, created_at')
         .eq('active', true)
         .order('sort_order', { ascending: true });
 
@@ -71,7 +71,7 @@ export async function getProducts(options?: {
       const supabase = createPublicClient();
       let query = supabase
         .from('products')
-        .select('id, name, slug, description, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, created_at, updated_at')
+        .select('id, name, name_ar, slug, description, description_ar, short_description, short_description_ar, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, arabic_translation_source, created_at, updated_at')
         .eq('active', true);
 
       if (options?.categorySlug) {
@@ -119,7 +119,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, slug, description, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, created_at, updated_at')
+        .select('id, name, name_ar, slug, description, description_ar, short_description, short_description_ar, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, arabic_translation_source, created_at, updated_at')
         .eq('slug', slug)
         .eq('active', true)
         .single();
@@ -142,7 +142,7 @@ export async function getCollections(type: 'occasion' | 'flower' | 'collection')
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('collections')
-        .select('id, title, slug, subtitle, image_url, type, sort_order, active, created_at')
+        .select('id, title, title_ar, slug, subtitle, subtitle_ar, image_url, type, sort_order, active, created_at')
         .eq('type', type)
         .eq('active', true)
         .order('sort_order', { ascending: true });
@@ -167,7 +167,7 @@ export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('blog_posts')
-        .select('id, title, slug, excerpt, content, cover_image, author, is_published, published_at, created_at')
+        .select('id, title, title_ar, slug, excerpt, excerpt_ar, content, content_ar, cover_image, author, author_ar, is_published, published_at, created_at')
         .eq('is_published', true)
         .order('published_at', { ascending: false })
         .limit(limit);
@@ -190,7 +190,7 @@ export async function getHomepageSections() {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('homepage_sections')
-        .select('section_key, title, subtitle, is_visible, sort_order, content_json, updated_at')
+        .select('section_key, title, title_ar, subtitle, subtitle_ar, is_visible, sort_order, content_json, updated_at')
         .eq('is_visible', true)
         .order('sort_order', { ascending: true });
 

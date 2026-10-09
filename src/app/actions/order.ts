@@ -46,6 +46,7 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
       p_pincode: data.pincode || '',
       p_delivery_notes: data.delivery_notes || '',
       p_items: rpcItems,
+      p_locale: data.locale || 'en',
     });
 
     let createdOrder: Partial<Order>;
@@ -69,6 +70,7 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
         subtotal,
         shipping_fee,
         total_amount,
+        locale: data.locale || 'en',
       };
     }
 
@@ -89,6 +91,7 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
       total_amount: createdOrder.total_amount || 0,
       status: 'pending',
       email_sent: false,
+      locale: (data.locale || 'en') as 'en' | 'ar',
       created_at: new Date().toISOString(),
       order_items: cartItems.map((item) => ({
         product_name: item.product.name,

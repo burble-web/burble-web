@@ -25,6 +25,7 @@
 
   --font-serif: var(--font-cormorant), Georgia, serif;
   --font-sans: var(--font-poppins), system-ui, sans-serif;
+  --font-arabic: var(--font-cairo), 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
   --radius-card: 16px;
   --radius-button: 8px;
@@ -44,7 +45,37 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Hide scrollbar for clean horizontal scrolls */
+/* RTL Typography & Direction */
+[dir="rtl"],
+html[lang="ar"],
+.rtl {
+  font-family: var(--font-arabic), system-ui, sans-serif;
+  letter-spacing: normal;
+}
+
+[dir="rtl"] .font-serif,
+html[lang="ar"] .font-serif {
+  font-family: var(--font-arabic), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+[dir="rtl"] .font-sans,
+html[lang="ar"] .font-sans {
+  font-family: var(--font-arabic), system-ui, sans-serif;
+}
+
+/* Directional Arrow Reversals for RTL */
+[dir="rtl"] .rtl-flip,
+[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .rtl-rotate {
+  transform: rotate(180deg);
+}
+
+/* Hide scrollbar for clean horizontal rails */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
