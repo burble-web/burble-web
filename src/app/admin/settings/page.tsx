@@ -73,17 +73,17 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-plum-900">Store Settings</h1>
+          <h1 className="font-serif text-3xl font-bold text-plum-950">Store Settings</h1>
           <p className="text-xs text-ink-500 mt-1">Configure bilingual store identity, WhatsApp number, admin emails, currency and shipping thresholds.</p>
         </div>
 
         <button
           onClick={handleSave}
           disabled={saving || loading}
-          className="inline-flex items-center gap-2 bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all shadow-md"
+          className="inline-flex items-center gap-2 bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all shadow-xs cursor-pointer"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -109,92 +109,104 @@ export default function AdminSettingsPage() {
       )}
 
       {loading ? (
-        <div className="bg-white p-12 rounded-3xl border border-ink-100 flex flex-col items-center justify-center text-ink-400">
-          <Loader2 className="w-6 h-6 animate-spin mb-2" />
+        <div className="bg-white p-16 rounded-3xl border border-ink-200/80 flex flex-col items-center justify-center text-ink-500">
+          <Loader2 className="w-6 h-6 animate-spin mb-2 text-plum-800" />
           <span className="text-xs font-medium">Loading store settings...</span>
         </div>
       ) : (
-        <form onSubmit={handleSave} className="bg-white p-6 sm:p-8 rounded-3xl border border-ink-100 shadow-xs space-y-6 text-xs">
+        <form onSubmit={handleSave} className="bg-white p-6 sm:p-8 rounded-3xl border border-ink-200/80 shadow-2xs space-y-6 text-xs">
           
+          <div className="pb-3 border-b border-ink-200">
+            <h3 className="font-serif text-lg font-bold text-plum-950">Brand & Contact Details</h3>
+            <p className="text-xs text-ink-500 mt-0.5">Basic brand configuration and primary contact information.</p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Store Name (English) *</label>
+              <label className="block font-semibold text-plum-950 mb-1.5">Store Name (English) <span className="text-rose-600">*</span></label>
               <input
                 type="text"
                 required
                 value={settings.store_name}
                 onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1 font-arabic">اسم المتجر (العربية)</label>
+              <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">اسم المتجر (العربية)</label>
               <input
                 type="text"
                 dir="rtl"
                 value={settings.store_name_ar || ''}
                 onChange={(e) => setSettings({ ...settings, store_name_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Store Tagline (English)</label>
+              <label className="block font-semibold text-plum-950 mb-1.5">Store Tagline (English)</label>
               <input
                 type="text"
                 value={settings.tagline || ''}
                 onChange={(e) => setSettings({ ...settings, tagline: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1 font-arabic">شعار المتجر (العربية)</label>
+              <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">شعار المتجر (العربية)</label>
               <input
                 type="text"
                 dir="rtl"
                 value={settings.tagline_ar || ''}
                 onChange={(e) => setSettings({ ...settings, tagline_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Currency Symbol *</label>
+              <label className="block font-semibold text-plum-950 mb-1.5">Currency Symbol <span className="text-rose-600">*</span></label>
               <input
                 type="text"
                 required
                 value={settings.currency_symbol}
                 onChange={(e) => setSettings({ ...settings, currency_symbol: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">WhatsApp Contact Number *</label>
+              <label className="block font-semibold text-plum-950 mb-1.5">WhatsApp Contact Number <span className="text-rose-600">*</span></label>
               <input
                 type="text"
                 required
                 value={settings.whatsapp_number}
                 onChange={(e) => setSettings({ ...settings, whatsapp_number: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
 
-            <div>
-              <label className="block font-semibold text-plum-900 mb-1">Admin Notification Email *</label>
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-plum-950 mb-1.5">Admin Notification Email <span className="text-rose-600">*</span></label>
               <input
                 type="email"
                 required
                 value={settings.admin_email}
                 onChange={(e) => setSettings({ ...settings, admin_email: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
+          </div>
 
+          <div className="pt-4 pb-2 border-t border-ink-200">
+            <h3 className="font-serif text-lg font-bold text-plum-950">Shipping & Delivery Fees</h3>
+            <p className="text-xs text-ink-500 mt-0.5">Threshold for complimentary delivery and standard shipping charges.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Free Delivery Threshold ({settings.currency_symbol}) *</label>
+              <label className="block font-semibold text-plum-950 mb-1.5">Free Delivery Threshold ({settings.currency_symbol}) <span className="text-rose-600">*</span></label>
               <input
                 type="number"
                 step="0.01"
@@ -202,12 +214,12 @@ export default function AdminSettingsPage() {
                 required
                 value={settings.free_shipping_threshold}
                 onChange={(e) => setSettings({ ...settings, free_shipping_threshold: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Flat Delivery Fee ({settings.currency_symbol}) *</label>
+              <label className="block font-semibold text-plum-950 mb-1.5">Flat Delivery Fee ({settings.currency_symbol}) <span className="text-rose-600">*</span></label>
               <input
                 type="number"
                 step="0.01"
@@ -215,41 +227,41 @@ export default function AdminSettingsPage() {
                 required
                 value={settings.flat_shipping_fee}
                 onChange={(e) => setSettings({ ...settings, flat_shipping_fee: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-ink-100 space-y-4">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="pt-4 border-t border-ink-200 space-y-4">
+            <label className="flex items-center gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.announcement_enabled ?? true}
                 onChange={(e) => setSettings({ ...settings, announcement_enabled: e.target.checked })}
-                className="text-plum-800 rounded focus:ring-plum-800"
+                className="text-plum-900 rounded focus:ring-plum-800 cursor-pointer"
               />
-              <span className="font-semibold text-plum-900">Enable Global Announcement Bar</span>
+              <span className="font-semibold text-plum-950">Enable Global Announcement Bar</span>
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Announcement Text (English)</label>
+                <label className="block font-semibold text-plum-950 mb-1.5">Announcement Text (English)</label>
                 <input
                   type="text"
                   value={settings.announcement_text || ''}
                   onChange={(e) => setSettings({ ...settings, announcement_text: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-plum-900 mb-1 font-arabic">نص الإعلان (العربية)</label>
+                <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">نص الإعلان (العربية)</label>
                 <input
                   type="text"
                   dir="rtl"
                   value={settings.announcement_text_ar || ''}
                   onChange={(e) => setSettings({ ...settings, announcement_text_ar: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
                 />
               </div>
             </div>

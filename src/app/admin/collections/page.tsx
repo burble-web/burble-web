@@ -167,20 +167,20 @@ export default function AdminCollectionsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-6 border border-ink-200/80 shadow-xs">
+      <div className="bg-white rounded-3xl p-6 border border-ink-200/80 shadow-2xs">
         {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center text-ink-500">
+          <div className="py-16 flex flex-col items-center justify-center text-ink-500">
             <Loader2 className="w-6 h-6 animate-spin mb-2 text-plum-800" />
             <span className="text-xs font-medium">Loading collections...</span>
           </div>
         ) : collections.length === 0 ? (
-          <div className="py-16 text-center border border-dashed border-ink-200 rounded-2xl">
-            <Layers className="w-12 h-12 text-ink-400 mx-auto mb-3 stroke-[1.5]" />
-            <p className="font-serif text-lg font-bold text-plum-950">No Collections Found</p>
+          <div className="py-16 text-center border border-dashed border-ink-200 rounded-2xl bg-cream-50/30 p-8">
+            <Layers className="w-10 h-10 text-ink-400 mx-auto mb-3 stroke-[1.5]" />
+            <p className="font-serif text-base font-bold text-plum-950">No Collections Found</p>
             <p className="text-xs text-ink-600 font-medium mt-1">Create your first occasion, flower type, or collection above.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-ink-100">
+          <div className="overflow-x-auto rounded-2xl border border-ink-200">
             <table className="w-full text-start border-collapse text-xs">
               <thead>
                 <tr className="bg-cream-100/90 border-b border-ink-200 text-ink-800 font-bold uppercase tracking-wider text-[11px]">
@@ -196,7 +196,7 @@ export default function AdminCollectionsPage() {
                   <tr key={col.id} className="hover:bg-cream-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-bold text-plum-950">
                       <div className="flex items-center gap-3">
-                        <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-200 flex items-center justify-center">
+                        <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-cream-200 shrink-0 border border-ink-200 flex items-center justify-center">
                           {col.image_url ? (
                             <Image
                               src={col.image_url}
@@ -252,14 +252,14 @@ export default function AdminCollectionsPage() {
                           });
                           setModalOpen(true);
                         }}
-                        className="p-2 text-plum-900 hover:bg-plum-100 rounded-lg transition-colors"
+                        className="p-2 text-plum-900 hover:bg-plum-100/70 rounded-lg transition-colors cursor-pointer"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(col.id)}
-                        className="p-2 text-rose-800 hover:bg-rose-100 rounded-lg transition-colors"
+                        className="p-2 text-rose-700 hover:bg-rose-100/70 rounded-lg transition-colors cursor-pointer"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -274,17 +274,17 @@ export default function AdminCollectionsPage() {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-plum-950/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-ink-100 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-plum-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-ink-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-2xl font-bold text-plum-900">
+              <h2 className="font-serif text-2xl font-bold text-plum-950">
                 {editingCollection.id ? 'Edit Collection' : 'Create Collection'}
               </h2>
               <button
                 type="button"
                 onClick={handleAutoTranslate}
                 disabled={translating}
-                className="inline-flex items-center gap-1.5 bg-blush-100 hover:bg-blush-200 text-plum-900 font-bold px-3 py-1.5 rounded-xl text-xs transition-colors"
+                className="inline-flex items-center gap-1.5 bg-blush-100 hover:bg-blush-200 text-plum-950 font-bold px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
               >
                 {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-gold-600" />}
                 <span>{translating ? 'Translating...' : '✨ Generate Arabic'}</span>
@@ -294,54 +294,54 @@ export default function AdminCollectionsPage() {
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Collection Title (English) *</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5">Collection Title (English) <span className="text-rose-600">*</span></label>
                   <input
                     type="text"
                     required
                     value={editingCollection.title || ''}
                     onChange={(e) => setEditingCollection({ ...editingCollection, title: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">عنوان المجموعة (العربية)</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">عنوان المجموعة (العربية)</label>
                   <input
                     type="text"
                     dir="rtl"
                     value={editingCollection.title_ar || ''}
                     onChange={(e) => setEditingCollection({ ...editingCollection, title_ar: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Subtitle (English)</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5">Subtitle (English)</label>
                   <input
                     type="text"
                     value={editingCollection.subtitle || ''}
                     onChange={(e) => setEditingCollection({ ...editingCollection, subtitle: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">الوصف الفرعي (العربية)</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">الوصف الفرعي (العربية)</label>
                   <input
                     type="text"
                     dir="rtl"
                     value={editingCollection.subtitle_ar || ''}
                     onChange={(e) => setEditingCollection({ ...editingCollection, subtitle_ar: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Type</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5">Type</label>
                   <select
                     value={editingCollection.type || 'occasion'}
                     onChange={(e) =>
@@ -350,7 +350,7 @@ export default function AdminCollectionsPage() {
                         type: e.target.value as 'occasion' | 'flower' | 'collection',
                       })
                     }
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   >
                     <option value="occasion">Occasion</option>
                     <option value="flower">Flower Type</option>
@@ -359,33 +359,33 @@ export default function AdminCollectionsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Sort Order</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5">Sort Order</label>
                   <input
                     type="number"
                     value={editingCollection.sort_order ?? 0}
                     onChange={(e) =>
                       setEditingCollection({ ...editingCollection, sort_order: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Image (Cloudinary URL)</label>
+                <label className="block font-semibold text-plum-950 mb-1.5">Image (Cloudinary URL)</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={editingCollection.image_url || ''}
                     onChange={(e) => setEditingCollection({ ...editingCollection, image_url: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setMediaPickerOpen(true)}
-                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0"
+                    className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
                   >
-                    <ImageIcon className="w-4 h-4" />
+                    <ImageIcon className="w-4 h-4 text-plum-800" />
                     <span>Choose</span>
                   </button>
                 </div>
@@ -393,8 +393,8 @@ export default function AdminCollectionsPage() {
 
               {/* Linked Products Checklist */}
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Associated Products</label>
-                <div className="max-h-36 overflow-y-auto bg-cream-50 border border-ink-100 rounded-xl p-3 space-y-2">
+                <label className="block font-semibold text-plum-950 mb-1.5">Associated Products</label>
+                <div className="max-h-36 overflow-y-auto bg-cream-50/50 border border-ink-200 rounded-xl p-3 space-y-2">
                   {products.map((prod) => {
                     const isChecked = (editingCollection.product_ids || []).includes(prod.id);
                     return (
@@ -403,10 +403,10 @@ export default function AdminCollectionsPage() {
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleProductSelection(prod.id)}
-                          className="text-plum-800 rounded focus:ring-plum-800"
+                          className="text-plum-900 rounded focus:ring-plum-800"
                         />
                         <span className="text-ink-900 font-medium">{prod.name}</span>
-                        {prod.name_ar && <span className="text-plum-700 font-arabic text-[11px]">({prod.name_ar})</span>}
+                        {prod.name_ar && <span className="text-plum-800 font-arabic text-[11px]">({prod.name_ar})</span>}
                       </label>
                     );
                   })}
@@ -419,24 +419,24 @@ export default function AdminCollectionsPage() {
                     type="checkbox"
                     checked={editingCollection.active ?? true}
                     onChange={(e) => setEditingCollection({ ...editingCollection, active: e.target.checked })}
-                    className="text-plum-800 rounded focus:ring-plum-800"
+                    className="text-plum-900 rounded focus:ring-plum-800"
                   />
-                  <span className="font-semibold text-plum-900">Active</span>
+                  <span className="font-semibold text-plum-950">Active</span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-ink-100">
+              <div className="flex justify-end gap-3 pt-6 border-t border-ink-200">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-ink-200 text-ink-700 font-semibold"
+                  className="px-5 py-2.5 rounded-xl border border-ink-200 text-ink-800 font-semibold hover:bg-cream-100 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-plum-900 text-white font-semibold flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-plum-900 hover:bg-plum-800 text-white font-semibold flex items-center gap-2 disabled:opacity-50 shadow-xs transition-colors cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{saving ? 'Saving...' : 'Save Collection'}</span>

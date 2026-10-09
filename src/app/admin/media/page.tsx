@@ -67,11 +67,11 @@ export default function AdminMediaPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-plum-900">Media Library</h1>
+          <h1 className="font-serif text-3xl font-bold text-plum-950">Media Library</h1>
           <p className="text-xs text-ink-500 mt-1">Manage Cloudinary storefront assets, hero images and product photos.</p>
         </div>
 
-        <label className="inline-flex items-center space-x-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-5 py-3 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50">
+        <label className="inline-flex items-center space-x-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-5 py-3 rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50">
           {uploading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
@@ -94,7 +94,7 @@ export default function AdminMediaPage() {
           <span className="text-xs text-ink-500 font-medium">Loading Cloudinary media assets...</span>
         </div>
       ) : mediaList.length === 0 ? (
-        <div className="py-20 text-center border border-dashed border-ink-200 rounded-3xl bg-white p-8">
+        <div className="py-20 text-center border border-dashed border-ink-200 rounded-3xl bg-cream-50/30 p-8">
           <ImageIcon className="w-12 h-12 text-ink-400 mx-auto mb-3 stroke-[1.5]" />
           <h3 className="font-serif text-lg font-bold text-plum-950">No Media Assets Found</h3>
           <p className="text-xs text-ink-600 mt-1 max-w-sm mx-auto">
@@ -106,10 +106,10 @@ export default function AdminMediaPage() {
           {mediaList.map((item) => (
             <div
               key={item.id}
-              className="group bg-white rounded-2xl p-3 border border-ink-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white rounded-2xl p-3 border border-ink-200/80 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
             >
-              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-cream-200 mb-3 border border-ink-100">
-                <Image src={item.url} alt={item.name} fill className="object-cover" />
+              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-cream-200 mb-3 border border-ink-200">
+                <Image src={item.url} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
               </div>
 
               <div>
@@ -119,16 +119,16 @@ export default function AdminMediaPage() {
 
                 <button
                   onClick={() => handleCopyUrl(item.url, item.id)}
-                  className="w-full mt-2 py-1.5 px-2 bg-cream-100 hover:bg-plum-100 text-plum-950 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 transition-colors border border-ink-200"
+                  className="w-full mt-2.5 py-2 px-2.5 bg-cream-100/70 hover:bg-cream-200/80 text-plum-950 rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1.5 transition-colors border border-ink-200 cursor-pointer"
                 >
                   {copiedId === item.id ? (
                     <>
-                      <Check className="w-3 h-3 text-emerald-600" />
-                      <span className="text-emerald-700">URL Copied</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-700" />
+                      <span className="text-emerald-800">URL Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3 text-plum-800" />
+                      <Copy className="w-3.5 h-3.5 text-plum-800" />
                       <span>Copy Media URL</span>
                     </>
                   )}

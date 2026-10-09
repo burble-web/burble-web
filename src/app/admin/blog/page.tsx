@@ -158,14 +158,20 @@ export default function AdminBlogPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-6 border border-ink-200/80 shadow-xs">
+      <div className="bg-white rounded-3xl p-6 border border-ink-200/80 shadow-2xs">
         {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center text-ink-500">
+          <div className="py-16 flex flex-col items-center justify-center text-ink-500">
             <Loader2 className="w-6 h-6 animate-spin mb-2 text-plum-800" />
             <span className="text-xs font-medium">Loading blog posts...</span>
           </div>
+        ) : posts.length === 0 ? (
+          <div className="py-16 text-center border border-dashed border-ink-200 rounded-2xl bg-cream-50/30 p-8">
+            <ImageIcon className="w-10 h-10 text-ink-400 mx-auto mb-3 stroke-[1.5]" />
+            <p className="font-serif text-base font-bold text-plum-950">No Blog Posts Found</p>
+            <p className="text-xs text-ink-600 font-medium mt-1">Create your first floral guide or article using the button above.</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-ink-100">
+          <div className="overflow-x-auto rounded-2xl border border-ink-200">
             <table className="w-full text-start border-collapse text-xs">
               <thead>
                 <tr className="bg-cream-100/90 border-b border-ink-200 text-ink-800 font-bold uppercase tracking-wider text-[11px]">
@@ -180,7 +186,7 @@ export default function AdminBlogPage() {
                   <tr key={post.id} className="hover:bg-cream-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-bold text-plum-950">
                       <div className="flex items-center gap-3">
-                        <div className="relative w-12 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-200 flex items-center justify-center">
+                        <div className="relative w-12 h-10 rounded-xl overflow-hidden bg-cream-200 shrink-0 border border-ink-200 flex items-center justify-center">
                           {post.cover_image ? (
                             <Image
                               src={post.cover_image}
@@ -204,12 +210,12 @@ export default function AdminBlogPage() {
                     <td className="py-3.5 px-4 font-semibold text-plum-900">{post.author}</td>
                     <td className="py-3.5 px-4">
                       {post.is_published ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-950 border border-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-950 border border-emerald-200 px-2.5 py-1 rounded-full text-[10px] font-bold">
                           <CheckCircle className="w-3.5 h-3.5 text-emerald-700" />
                           <span>Published</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 border border-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-950 border border-amber-200 px-2.5 py-1 rounded-full text-[10px] font-bold">
                           <XCircle className="w-3.5 h-3.5 text-amber-700" />
                           <span>Draft</span>
                         </span>
@@ -233,14 +239,14 @@ export default function AdminBlogPage() {
                           });
                           setModalOpen(true);
                         }}
-                        className="p-2 text-plum-900 hover:bg-plum-100 rounded-lg transition-colors"
+                        className="p-2 text-plum-900 hover:bg-plum-100/70 rounded-lg transition-colors cursor-pointer"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(post.id)}
-                        className="p-2 text-rose-800 hover:bg-rose-100 rounded-lg transition-colors"
+                        className="p-2 text-rose-700 hover:bg-rose-100/70 rounded-lg transition-colors cursor-pointer"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -255,17 +261,17 @@ export default function AdminBlogPage() {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-plum-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-ink-100 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-plum-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-ink-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif text-2xl font-bold text-plum-900">
+              <h2 className="font-serif text-2xl font-bold text-plum-950">
                 {editingPost.id ? 'Edit Blog Post' : 'Create Blog Post'}
               </h2>
               <button
                 type="button"
                 onClick={handleAutoTranslate}
                 disabled={translating}
-                className="inline-flex items-center gap-1.5 bg-blush-100 hover:bg-blush-200 text-plum-900 font-bold px-3 py-1.5 rounded-xl text-xs transition-colors"
+                className="inline-flex items-center gap-1.5 bg-blush-100 hover:bg-blush-200 text-plum-950 font-bold px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
               >
                 {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-gold-600" />}
                 <span>{translating ? 'Translating...' : '✨ Generate Arabic'}</span>
@@ -275,88 +281,88 @@ export default function AdminBlogPage() {
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Article Title (English) *</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5">Article Title (English) <span className="text-rose-600">*</span></label>
                   <input
                     type="text"
                     required
                     value={editingPost.title || ''}
                     onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">عنوان المقال (العربية)</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">عنوان المقال (العربية)</label>
                   <input
                     type="text"
                     dir="rtl"
                     value={editingPost.title_ar || ''}
                     onChange={(e) => setEditingPost({ ...editingPost, title_ar: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Excerpt / Summary (English)</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5">Excerpt / Summary (English)</label>
                   <textarea
                     rows={2}
                     value={editingPost.excerpt || ''}
                     onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">الموجز (العربية)</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">الموجز (العربية)</label>
                   <textarea
                     rows={2}
                     dir="rtl"
                     value={editingPost.excerpt_ar || ''}
                     onChange={(e) => setEditingPost({ ...editingPost, excerpt_ar: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Article Content (English) *</label>
+                <label className="block font-semibold text-plum-950 mb-1.5">Article Content (English) <span className="text-rose-600">*</span></label>
                 <textarea
                   rows={4}
                   required
                   value={editingPost.content || ''}
                   onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-mono"
+                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-mono"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-plum-900 mb-1 font-arabic">محتوى المقال (العربية)</label>
+                <label className="block font-semibold text-plum-950 mb-1.5 font-arabic">محتوى المقال (العربية)</label>
                 <textarea
                   rows={4}
                   dir="rtl"
                   value={editingPost.content_ar || ''}
                   onChange={(e) => setEditingPost({ ...editingPost, content_ar: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-plum-900 mb-1">Cover Image (Cloudinary URL)</label>
+                <label className="block font-semibold text-plum-950 mb-1.5">Cover Image (Cloudinary URL)</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={editingPost.cover_image || ''}
                     onChange={(e) => setEditingPost({ ...editingPost, cover_image: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setMediaPickerOpen(true)}
-                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0"
+                    className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
                   >
-                    <ImageIcon className="w-4 h-4" />
+                    <ImageIcon className="w-4 h-4 text-plum-800" />
                     <span>Choose</span>
                   </button>
                 </div>
@@ -364,12 +370,12 @@ export default function AdminBlogPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-plum-900 mb-1">Author Name</label>
+                  <label className="block font-semibold text-plum-950 mb-1.5">Author Name</label>
                   <input
                     type="text"
                     value={editingPost.author || 'Burble Florist'}
                     onChange={(e) => setEditingPost({ ...editingPost, author: e.target.value })}
-                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                    className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                   />
                 </div>
 
@@ -379,25 +385,25 @@ export default function AdminBlogPage() {
                       type="checkbox"
                       checked={editingPost.is_published ?? true}
                       onChange={(e) => setEditingPost({ ...editingPost, is_published: e.target.checked })}
-                      className="text-plum-800 rounded focus:ring-plum-800"
+                      className="text-plum-900 rounded focus:ring-plum-800"
                     />
-                    <span className="font-semibold text-plum-900">Publish Immediately</span>
+                    <span className="font-semibold text-plum-950">Publish Immediately</span>
                   </label>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-ink-100">
+              <div className="flex justify-end gap-3 pt-6 border-t border-ink-200">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-ink-200 text-ink-700 font-semibold"
+                  className="px-5 py-2.5 rounded-xl border border-ink-200 text-ink-800 font-semibold hover:bg-cream-100 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-plum-900 text-white font-semibold flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-plum-900 hover:bg-plum-800 text-white font-semibold flex items-center gap-2 disabled:opacity-50 shadow-xs transition-colors cursor-pointer"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{saving ? 'Saving...' : 'Save Article'}</span>
