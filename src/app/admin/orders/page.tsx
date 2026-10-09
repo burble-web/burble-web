@@ -24,6 +24,7 @@ import { Order, OrderStatus, OrderSource } from '@/types';
 import { getAdminOrdersAction, updateOrderStatusAction } from '@/app/actions/order';
 import { useLocale } from '@/lib/i18n/context';
 import { formatDate } from '@/lib/i18n/utils';
+import { normalizeWhatsAppNumber } from '@/lib/whatsapp/message';
 
 const ALL_STATUSES: OrderStatus[] = [
   'pending',
@@ -644,7 +645,7 @@ export default function AdminOrdersPage() {
             {/* Quick Operational Communication Toolbar */}
             <div className="flex flex-wrap items-center gap-2 p-3 bg-cream-100/80 rounded-2xl border border-ink-200">
               <a
-                href={`https://wa.me/${selectedOrder.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                href={`https://api.whatsapp.com/send?phone=${normalizeWhatsAppNumber(selectedOrder.customer_phone)}&text=${encodeURIComponent(
                   isAr
                     ? `مرحباً ${selectedOrder.customer_name}، نتواصل معك بخصوص طلبك رقم #${selectedOrder.order_number} من متجر بيربل للزهور.`
                     : `Hello ${selectedOrder.customer_name}, contacting you regarding your Burble flower order #${selectedOrder.order_number}.`

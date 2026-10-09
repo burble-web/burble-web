@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, MessageSquare, Banknote, ArrowRight, ArrowLeft, ExternalLink, AlertCircle, ShoppingBag } from 'lucide-react';
 import { Order, SiteSettings } from '@/types';
 import { useLocale } from '@/lib/i18n/context';
 import { getLocalizedValue, formatPrice, formatDate } from '@/lib/i18n/utils';
+import { createWhatsAppOrderLink } from '@/lib/whatsapp/message';
 
 interface OrderSuccessClientProps {
   order: Order | null;
@@ -28,6 +29,37 @@ export function OrderSuccessClient({
 
   const isWhatsApp = (order?.source || searchSource) === 'whatsapp';
 
+  const effectiveWaUrl = useMemo(() => {
+    if (waUrl) return waUrl;
+    if (order && isWhatsApp) {
+      return createWhatsAppOrderLink({
+        whatsappNumber: settings.whatsapp_number,
+        orderNumber: order.order_number,
+        formData: {
+          customer_name: order.customer_name,
+          customer_email: order.customer_email,
+          customer_phone: order.customer_phone,
+          delivery_address: order.delivery_address,
+          city: order.city,
+          district: order.district,
+          pincode: order.pincode,
+          delivery_notes: order.delivery_notes,
+          payment_method: 'whatsapp',
+          locale,
+        },
+        items: order.order_items || [],
+        subtotal: order.subtotal,
+        shippingFee: order.shipping_fee,
+        totalAmount: order.total_amount,
+        currencySymbol: settings.currency_symbol,
+        locale,
+        createdAt: order.created_at,
+        paymentMethod: 'whatsapp',
+      });
+    }
+    return undefined;
+  }, [waUrl, order, isWhatsApp, settings, locale]);
+
   if (!order) {
     return (
       <div className="bg-white rounded-3xl p-8 sm:p-12 border border-ink-100 shadow-sm text-center max-w-xl mx-auto my-8 space-y-6">
@@ -48,10 +80,10 @@ export function OrderSuccessClient({
           </p>
         </div>
 
-        {waUrl && (
+        {effectiveWaUrl && (
           <div className="pt-2">
             <a
-              href={waUrl}
+              href={effectiveWaUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-6 py-3.5 rounded-full shadow-md transition-all"
@@ -110,7 +142,7 @@ export function OrderSuccessClient({
         </div>
 
         {/* WhatsApp Action Callout for WhatsApp orders */}
-        {isWhatsApp && waUrl && (
+        {isWhatsApp && effectiveWaUrl && (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl max-w-md mx-auto space-y-3">
             <p className="text-[11px] text-emerald-950 font-medium">
               {isAr
@@ -118,7 +150,7 @@ export function OrderSuccessClient({
                 : 'If your WhatsApp chat did not open automatically, click below to send your order details:'}
             </p>
             <a
-              href={waUrl}
+              href={effectiveWaUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-sm transition-all w-full"

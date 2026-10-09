@@ -23,6 +23,8 @@ export async function generateMetadata({
   const locale = await getServerLocale();
   const product = await getProductBySlug(slug);
 
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://burbleflowers.com').replace(/\/+$/, '');
+
   if (!product) {
     return {
       title: 'Product Not Found | Burble',
@@ -41,20 +43,39 @@ export async function generateMetadata({
     arabic: product.description_ar,
   }) || (locale === 'ar' ? 'باقة زهور طبيعية فاخرة منسقة يدوياً من زهور بيربل قطر.' : 'Handcrafted luxury fresh floral bouquet from Burble Flowers Qatar.');
 
+  const productCanonicalUrl = `${siteUrl}/products/${product.slug}`;
+  const absoluteImageUrl = product.main_image_url.startsWith('http')
+    ? product.main_image_url
+    : `${siteUrl}${product.main_image_url.startsWith('/') ? '' : '/'}${product.main_image_url}`;
+
   return {
     title: `${productName} | Burble Flowers Qatar`,
     description: productDescription,
+    alternates: {
+      canonical: productCanonicalUrl,
+    },
     openGraph: {
-      title: `${productName} | Burble Flowers`,
+      title: `${productName} | Burble Flowers Qatar`,
       description: productDescription,
+      url: productCanonicalUrl,
+      siteName: 'Burble Flowers',
+      locale: locale === 'ar' ? 'ar_QA' : 'en_US',
+      alternateLocale: locale === 'ar' ? ['en_US'] : ['ar_QA'],
+      type: 'website',
       images: [
         {
-          url: product.main_image_url,
+          url: absoluteImageUrl,
           width: 800,
           height: 800,
           alt: productName,
         },
       ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${productName} | Burble Flowers Qatar`,
+      description: productDescription,
+      images: [absoluteImageUrl],
     },
   };
 }
