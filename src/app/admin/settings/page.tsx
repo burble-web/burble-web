@@ -31,11 +31,14 @@ export default function AdminSettingsPage() {
 
     const payload: SaveSettingsPayload = {
       store_name: settings.store_name,
+      store_name_ar: settings.store_name_ar,
       tagline: settings.tagline,
+      tagline_ar: settings.tagline_ar,
       whatsapp_number: settings.whatsapp_number,
       admin_email: settings.admin_email,
       currency_symbol: settings.currency_symbol,
       announcement_text: settings.announcement_text,
+      announcement_text_ar: settings.announcement_text_ar,
       announcement_enabled: settings.announcement_enabled,
       free_shipping_threshold: Number(settings.free_shipping_threshold),
       flat_shipping_fee: Number(settings.flat_shipping_fee),
@@ -57,13 +60,13 @@ export default function AdminSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-3xl font-bold text-plum-900">Store Settings</h1>
-          <p className="text-xs text-ink-500 mt-1">Configure WhatsApp number, admin emails, currency and shipping thresholds.</p>
+          <p className="text-xs text-ink-500 mt-1">Configure bilingual store identity, WhatsApp number, admin emails, currency and shipping thresholds.</p>
         </div>
 
         <button
           onClick={handleSave}
           disabled={saving || loading}
-          className="inline-flex items-center space-x-2 bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all shadow-md"
+          className="inline-flex items-center gap-2 bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all shadow-md"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -98,7 +101,7 @@ export default function AdminSettingsPage() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Store Name *</label>
+              <label className="block font-semibold text-plum-900 mb-1">Store Name (English) *</label>
               <input
                 type="text"
                 required
@@ -109,12 +112,34 @@ export default function AdminSettingsPage() {
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Store Tagline</label>
+              <label className="block font-semibold text-plum-900 mb-1 font-arabic">اسم المتجر (العربية)</label>
+              <input
+                type="text"
+                dir="rtl"
+                value={settings.store_name_ar || ''}
+                onChange={(e) => setSettings({ ...settings, store_name_ar: e.target.value })}
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-plum-900 mb-1">Store Tagline (English)</label>
               <input
                 type="text"
                 value={settings.tagline || ''}
                 onChange={(e) => setSettings({ ...settings, tagline: e.target.value })}
                 className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-plum-900 mb-1 font-arabic">شعار المتجر (العربية)</label>
+              <input
+                type="text"
+                dir="rtl"
+                value={settings.tagline_ar || ''}
+                onChange={(e) => setSettings({ ...settings, tagline_ar: e.target.value })}
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
               />
             </div>
 
@@ -178,8 +203,8 @@ export default function AdminSettingsPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-ink-100 space-y-3">
-            <label className="flex items-center space-x-2 cursor-pointer">
+          <div className="pt-4 border-t border-ink-100 space-y-4">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.announcement_enabled ?? true}
@@ -189,14 +214,27 @@ export default function AdminSettingsPage() {
               <span className="font-semibold text-plum-900">Enable Global Announcement Bar</span>
             </label>
 
-            <div>
-              <label className="block font-semibold text-plum-900 mb-1">Announcement Text</label>
-              <input
-                type="text"
-                value={settings.announcement_text || ''}
-                onChange={(e) => setSettings({ ...settings, announcement_text: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold text-plum-900 mb-1">Announcement Text (English)</label>
+                <input
+                  type="text"
+                  value={settings.announcement_text || ''}
+                  onChange={(e) => setSettings({ ...settings, announcement_text: e.target.value })}
+                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-plum-900 mb-1 font-arabic">نص الإعلان (العربية)</label>
+                <input
+                  type="text"
+                  dir="rtl"
+                  value={settings.announcement_text_ar || ''}
+                  onChange={(e) => setSettings({ ...settings, announcement_text_ar: e.target.value })}
+                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                />
+              </div>
             </div>
           </div>
 
@@ -205,3 +243,4 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+

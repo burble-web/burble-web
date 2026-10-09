@@ -3,14 +3,18 @@
 import { createClient, verifyAdminServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { SiteSettings } from '@/types';
+import { translateTextServer } from '@/lib/translation/service';
 
 export interface SaveSettingsPayload {
   store_name: string;
+  store_name_ar?: string | null;
   tagline?: string;
+  tagline_ar?: string | null;
   whatsapp_number: string;
   admin_email: string;
   currency_symbol: string;
   announcement_text?: string;
+  announcement_text_ar?: string | null;
   announcement_enabled?: boolean;
   free_shipping_threshold: number;
   flat_shipping_fee: number;
@@ -67,13 +71,30 @@ export async function saveSettingsAction(payload: SaveSettingsPayload) {
   try {
     const supabase = await createClient();
 
+    let finalStoreNameAr = payload.store_name_ar && payload.store_name_ar.trim().length > 0 ? payload.store_name_ar.trim() : null;
+    let finalTaglineAr = payload.tagline_ar && payload.tagline_ar.trim().length > 0 ? payload.tagline_ar.trim() : null;
+    let finalAnnouncementAr = payload.announcement_text_ar && payload.announcement_text_ar.trim().length > 0 ? payload.announcement_text_ar.trim() : null;
+
+    if (!finalStoreNameAr) {
+      finalStoreNameAr = 'بربل للزهور';
+    }
+    if (!finalTaglineAr && payload.tagline && payload.tagline.trim().length > 0) {
+      finalTaglineAr = await translateTextServer(payload.tagline.trim(), 'general');
+    }
+    if (!finalAnnouncementAr && payload.announcement_text && payload.announcement_text.trim().length > 0) {
+      finalAnnouncementAr = await translateTextServer(payload.announcement_text.trim(), 'announcement');
+    }
+
     const dbRecord = {
       store_name: payload.store_name.trim(),
+      store_name_ar: finalStoreNameAr,
       tagline: payload.tagline ? payload.tagline.trim() : 'Flowers make moments special',
+      tagline_ar: finalTaglineAr,
       whatsapp_number: payload.whatsapp_number.trim(),
       admin_email: payload.admin_email.trim(),
       currency_symbol: payload.currency_symbol ? payload.currency_symbol.trim() : 'QAR',
       announcement_text: payload.announcement_text ? payload.announcement_text.trim() : null,
+      announcement_text_ar: finalAnnouncementAr,
       announcement_enabled: payload.announcement_enabled ?? true,
       free_shipping_threshold: payload.free_shipping_threshold,
       flat_shipping_fee: payload.flat_shipping_fee,
@@ -97,3 +118,4 @@ export async function saveSettingsAction(payload: SaveSettingsPayload) {
     return { success: false, error: err?.message || 'Failed to save store settings.' };
   }
 }
+

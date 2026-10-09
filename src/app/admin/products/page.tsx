@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Loader2, Image as ImageIcon, Sparkles, Globe } from 'lucide-react';
 import { Product, Category } from '@/types';
 import { DEMO_PRODUCTS, DEMO_CATEGORIES } from '@/lib/data/storefront';
 import {
@@ -13,6 +13,7 @@ import {
   SaveProductPayload,
 } from '@/app/actions/product';
 import { getAdminCategoriesAction } from '@/app/actions/category';
+import { translateTextAction } from '@/app/actions/translate';
 import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminProductsPage() {
@@ -22,6 +23,7 @@ export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const [editingProduct, setEditingProduct] = useState<Partial<SaveProductPayload> | null>(null);
@@ -53,15 +55,25 @@ export default function AdminProductsPage() {
     loadData();
   }, []);
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      (p.name_ar && p.name_ar.includes(searchQuery)) ||
+      p.slug.toLowerCase().includes(q)
+    );
+  });
 
   const handleCreateNew = () => {
     setEditingProduct({
       name: '',
+      name_ar: '',
       slug: '',
       description: '',
+      description_ar: '',
+      short_description: '',
+      short_description_ar: '',
+      arabic_translation_source: 'manual',
       price: 250,
       compare_at_price: null,
       category_id: categories[0]?.id || null,
@@ -80,8 +92,13 @@ export default function AdminProductsPage() {
     setEditingProduct({
       id: prod.id,
       name: prod.name,
+      name_ar: prod.name_ar || '',
       slug: prod.slug,
       description: prod.description || '',
+      description_ar: prod.description_ar || '',
+      short_description: prod.short_description || '',
+      short_description_ar: prod.short_description_ar || '',
+      arabic_translation_source: prod.arabic_translation_source || (prod.name_ar ? 'manual' : 'auto'),
       price: prod.price,
       compare_at_price: prod.compare_at_price,
       category_id: prod.category_id,
@@ -94,6 +111,43 @@ export default function AdminProductsPage() {
       sort_order: prod.sort_order,
     });
     setModalOpen(true);
+  };
+
+  const handleAutoTranslateArabic = async () => {
+    if (!editingProduct?.name || editingProduct.name.trim().length === 0) {
+      setFeedback({ type: 'error', message: 'Please enter an English product name first.' });
+      setTimeout(() => setFeedback(null), 3000);
+      return;
+    }
+
+    setTranslating(true);
+    try {
+      const nameRes = await translateTextAction(editingProduct.name.trim(), 'product_name');
+      const translatedName = nameRes.success && nameRes.translation ? nameRes.translation : (editingProduct.name_ar || '');
+
+      let translatedDesc = editingProduct.description_ar || '';
+      if (editingProduct.description && editingProduct.description.trim().length > 0 && !editingProduct.description_ar) {
+        const descRes = await translateTextAction(editingProduct.description.trim(), 'product_description');
+        if (descRes.success && descRes.translation) {
+          translatedDesc = descRes.translation;
+        }
+      }
+
+      setEditingProduct({
+        ...editingProduct,
+        name_ar: translatedName,
+        description_ar: translatedDesc,
+        arabic_translation_source: 'automatic',
+      });
+
+      setFeedback({ type: 'success', message: '✨ Arabic translation generated successfully!' });
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (e: any) {
+      setFeedback({ type: 'error', message: 'Failed to generate translation. You can still type Arabic manually.' });
+      setTimeout(() => setFeedback(null), 3000);
+    } finally {
+      setTranslating(false);
+    }
   };
 
   const handleToggleActive = async (id: string, currentActive: boolean) => {
@@ -162,12 +216,12 @@ export default function AdminProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-plum-900">Products Management</h1>
-          <p className="text-xs text-ink-500 mt-1">Create, edit and prioritize store catalog products.</p>
+          <p className="text-xs text-ink-500 mt-1">Create, edit and prioritize bilingual English & Arabic catalog products.</p>
         </div>
 
         <button
           onClick={handleCreateNew}
-          className="inline-flex items-center space-x-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-5 py-3 rounded-xl transition-all shadow-sm"
+          className="inline-flex items-center gap-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-5 py-3 rounded-xl transition-all shadow-sm"
         >
           <Plus className="w-4 h-4" />
           <span>Create Product</span>
@@ -188,10 +242,10 @@ export default function AdminProductsPage() {
 
       {/* Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-ink-100 shadow-xs flex items-center max-w-md">
-        <Search className="w-4 h-4 text-ink-400 mr-2" />
+        <Search className="w-4 h-4 text-ink-400 mr-2 rtl:mr-0 rtl:ml-2" />
         <input
           type="text"
-          placeholder="Filter products by name..."
+          placeholder="Filter products by English or Arabic name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none bg-transparent"
@@ -207,30 +261,50 @@ export default function AdminProductsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-start border-collapse text-xs">
               <thead>
                 <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                  <th className="py-3 px-4">Product</th>
+                  <th className="py-3 px-4">Product Name (EN / AR)</th>
+                  <th className="py-3 px-4">Arabic Status</th>
                   <th className="py-3 px-4">Price</th>
                   <th className="py-3 px-4">Stock</th>
                   <th className="py-3 px-4">Badges</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4 text-end">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {filteredProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-cream-50 transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
                           <Image src={product.main_image_url} alt={product.name} fill className="object-cover" />
                         </div>
                         <div>
                           <p className="font-bold text-plum-900">{product.name}</p>
-                          <p className="text-[11px] text-ink-500 font-mono">/{product.slug}</p>
+                          {product.name_ar && (
+                            <p className="text-[11px] text-plum-700 font-arabic font-semibold">{product.name_ar}</p>
+                          )}
+                          <p className="text-[10px] text-ink-400 font-mono">/{product.slug}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {product.name_ar ? (
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          product.arabic_translation_source === 'automatic' || product.arabic_translation_source === 'auto'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        }`}>
+                          <Globe className="w-3 h-3" />
+                          {product.arabic_translation_source === 'automatic' || product.arabic_translation_source === 'auto' ? 'Auto-Translated' : 'Manual Arabic'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                          Missing Arabic
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-plum-900">
                       QAR {product.price.toFixed(2)}
@@ -251,7 +325,7 @@ export default function AdminProductsPage() {
                         {product.stock_status === 'in_stock' ? 'In Stock' : 'Out of Stock'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 space-x-1">
+                    <td className="py-3.5 px-4 space-x-1 rtl:space-x-reverse">
                       {product.is_featured && (
                         <span className="bg-plum-100 text-plum-900 px-2 py-0.5 rounded-md text-[10px] font-bold">Featured</span>
                       )}
@@ -262,22 +336,22 @@ export default function AdminProductsPage() {
                     <td className="py-3.5 px-4">
                       <button
                         onClick={() => handleToggleActive(product.id, product.active)}
-                        className="flex items-center space-x-1 text-xs font-semibold focus:outline-none"
+                        className="flex items-center gap-1 text-xs font-semibold focus:outline-none"
                       >
                         {product.active ? (
-                          <span className="text-emerald-700 flex items-center space-x-1">
+                          <span className="text-emerald-700 flex items-center gap-1">
                             <CheckCircle className="w-4 h-4" />
                             <span>Active</span>
                           </span>
                         ) : (
-                          <span className="text-ink-400 flex items-center space-x-1">
+                          <span className="text-ink-400 flex items-center gap-1">
                             <XCircle className="w-4 h-4" />
                             <span>Inactive</span>
                           </span>
                         )}
                       </button>
                     </td>
-                    <td className="py-3.5 px-4 text-right space-x-1">
+                    <td className="py-3.5 px-4 text-end space-x-1 rtl:space-x-reverse">
                       <button
                         onClick={() => handleEdit(product)}
                         className="p-1.5 text-plum-800 hover:bg-plum-100 rounded-lg transition-colors"
@@ -304,34 +378,83 @@ export default function AdminProductsPage() {
       {/* Product Edit Modal */}
       {modalOpen && editingProduct && (
         <div className="fixed inset-0 z-50 bg-plum-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-ink-100 max-h-[90vh] overflow-y-auto">
-            <h2 className="font-serif text-2xl font-bold text-plum-900 mb-4">
-              {editingProduct.id ? 'Edit Product' : 'Create New Product'}
-            </h2>
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-ink-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-2xl font-bold text-plum-900">
+                {editingProduct.id ? 'Edit Product' : 'Create New Product'}
+              </h2>
+              <button
+                type="button"
+                onClick={handleAutoTranslateArabic}
+                disabled={translating}
+                className="inline-flex items-center gap-1.5 bg-blush-100 hover:bg-blush-200 text-plum-900 font-bold px-3 py-1.5 rounded-xl text-xs transition-colors"
+                title="Auto-translate English text to natural Arabic"
+              >
+                {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-gold-600" />}
+                <span>{translating ? 'Translating...' : '✨ Generate Arabic'}</span>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-ink-500 mb-6 bg-cream-50 p-2.5 rounded-xl border border-ink-100">
+              💡 <strong>Bilingual Policy:</strong> Leave Arabic fields empty to generate natural Arabic automatically from English content. Manually typed Arabic is always preserved and never overwritten.
+            </p>
 
             <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-plum-900 mb-1">Product Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingProduct.name || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
-                />
+              {/* Dual Names */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1">Product Name (English) *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingProduct.name || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                    placeholder="e.g. Royal Rose Symphony"
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">اسم المنتج (العربية)</label>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    value={editingProduct.name_ar || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, name_ar: e.target.value, arabic_translation_source: 'manual' })}
+                    placeholder="مثال: سيمفونية الورد الملكي"
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30 font-arabic"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-plum-900 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={editingProduct.description || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
-                />
+              {/* Dual Descriptions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1">Description (English)</label>
+                  <textarea
+                    rows={3}
+                    value={editingProduct.description || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                    placeholder="Detailed floral arrangement description..."
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">الوصف (العربية)</label>
+                  <textarea
+                    rows={3}
+                    dir="rtl"
+                    value={editingProduct.description_ar || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, description_ar: e.target.value, arabic_translation_source: 'manual' })}
+                    placeholder="وصف تنسيق الزهور بالتفصيل..."
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30 font-arabic"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Pricing & Stock */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <label className="block font-semibold text-plum-900 mb-1">Price (QAR) *</label>
                   <input
@@ -360,9 +483,7 @@ export default function AdminProductsPage() {
                     className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block font-semibold text-plum-900 mb-1">Category</label>
                   <select
@@ -400,7 +521,7 @@ export default function AdminProductsPage() {
               {/* Main Image with Cloudinary Picker */}
               <div>
                 <label className="block font-semibold text-plum-900 mb-1">Main Image (Cloudinary URL) *</label>
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     required
@@ -411,7 +532,7 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => handleOpenMediaPicker('main')}
-                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shrink-0"
+                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0"
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span>Choose</span>
@@ -422,7 +543,7 @@ export default function AdminProductsPage() {
               {/* Hover Image */}
               <div>
                 <label className="block font-semibold text-plum-900 mb-1">Hover Image (Optional)</label>
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={editingProduct.hover_image_url || ''}
@@ -432,7 +553,7 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => handleOpenMediaPicker('hover')}
-                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shrink-0"
+                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0"
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span>Choose</span>
@@ -440,8 +561,8 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-6 pt-2">
-                <label className="flex items-center space-x-2 cursor-pointer">
+              <div className="flex items-center gap-6 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editingProduct.is_featured || false}
@@ -451,7 +572,7 @@ export default function AdminProductsPage() {
                   <span className="font-semibold text-plum-900">Featured</span>
                 </label>
 
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editingProduct.is_new_arrival || false}
@@ -461,7 +582,7 @@ export default function AdminProductsPage() {
                   <span className="font-semibold text-plum-900">New Arrival</span>
                 </label>
 
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editingProduct.active ?? true}
@@ -472,7 +593,7 @@ export default function AdminProductsPage() {
                 </label>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-6 border-t border-ink-100">
+              <div className="flex items-center justify-end gap-3 pt-6 border-t border-ink-100">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
@@ -483,7 +604,7 @@ export default function AdminProductsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-2.5 rounded-xl bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white font-semibold shadow-md flex items-center space-x-2"
+                  className="px-6 py-2.5 rounded-xl bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white font-semibold shadow-md flex items-center gap-2"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{saving ? 'Saving...' : 'Save Product'}</span>
@@ -504,3 +625,4 @@ export default function AdminProductsPage() {
     </div>
   );
 }
+

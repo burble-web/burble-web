@@ -3,12 +3,15 @@
 import { createClient, verifyAdminServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Category } from '@/types';
+import { translateTextServer } from '@/lib/translation/service';
 
 export interface SaveCategoryPayload {
   id?: string;
   name: string;
+  name_ar?: string | null;
   slug?: string;
   description?: string;
+  description_ar?: string | null;
   image_url?: string;
   sort_order?: number;
   active?: boolean;
@@ -52,10 +55,22 @@ export async function saveCategoryAction(payload: SaveCategoryPayload) {
   try {
     const supabase = await createClient();
 
+    let finalNameAr = payload.name_ar && payload.name_ar.trim().length > 0 ? payload.name_ar.trim() : null;
+    let finalDescAr = payload.description_ar && payload.description_ar.trim().length > 0 ? payload.description_ar.trim() : null;
+
+    if (!finalNameAr) {
+      finalNameAr = await translateTextServer(payload.name.trim(), 'category_name');
+    }
+    if (!finalDescAr && payload.description && payload.description.trim().length > 0) {
+      finalDescAr = await translateTextServer(payload.description.trim(), 'general');
+    }
+
     const dbRecord = {
       name: payload.name.trim(),
+      name_ar: finalNameAr,
       slug: generatedSlug,
       description: payload.description ? payload.description.trim() : null,
+      description_ar: finalDescAr,
       image_url: payload.image_url ? payload.image_url.trim() : null,
       sort_order: payload.sort_order ?? 0,
       active: payload.active ?? true,
