@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sliders, Eye, EyeOff, Save, Check, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
-import { saveCmsConfigurationAction } from '@/app/actions/cms';
+import React, { useState, useEffect } from 'react';
+import { Eye, Save, Check, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { saveCmsConfigurationAction, getAdminCmsConfigurationAction } from '@/app/actions/cms';
 import { translateTextAction } from '@/app/actions/translate';
 import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminCMSPage() {
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -17,24 +18,72 @@ export default function AdminCMSPage() {
   const [pickerTargetField, setPickerTargetField] = useState<'desktop' | 'mobile'>('desktop');
 
   const [cmsData, setCmsData] = useState({
-    announcementText: 'Fresh Flowers Sourced Daily • Same-Day Delivery • Premium Quality • Beautifully Wrapped',
-    announcementText_ar: 'زهور طازجة يومياً • توصيل في نفس اليوم • جودة فاخرة • تغليف راقي',
+    announcementText: '',
+    announcementText_ar: '',
     announcementEnabled: true,
-    heroTitle: 'A Little Thought\nA Big Happiness',
-    heroTitle_ar: 'لمسة لطيفة\nلسعادة تدوم',
-    heroSubtitle: 'Fresh, handcrafted bouquets to make your special moments unforgettable.',
-    heroSubtitle_ar: 'باقات زهور طبيعية منسقة يدوياً بحب لتجعل لحظاتك الخاصة في قطر لا تُنسى.',
+    heroTitle: '',
+    heroTitle_ar: '',
+    heroSubtitle: '',
+    heroSubtitle_ar: '',
     heroCtaText: 'Shop Flowers',
     heroCtaText_ar: 'تسوق الزهور',
     heroCtaLink: '/products',
-    heroDesktopImage: '/demo-media/hero_desktop.jpg',
-    heroMobileImage: '/demo-media/hero_mobile_v2.jpg',
+    heroDesktopImage: '',
+    heroMobileImage: '',
     showNewArrivals: true,
     showOccasions: true,
     showHandBouquets: true,
     showFlowersInVase: true,
     showBlog: true,
   });
+
+  useEffect(() => {
+    async function loadCmsContent() {
+      setLoading(true);
+      try {
+        const res = await getAdminCmsConfigurationAction();
+        const settings = res.settings;
+        const sections = res.sections || [];
+
+        const hero = sections.find((s: any) => s.section_key === 'hero_banner');
+        const heroContent = hero?.content_json || {};
+
+        const isMetaTitle = (str?: string | null) => !str || ['Main Hero Slider', 'Hero Section', 'Hero Banner', 'واجهة البانر الرئيسي'].includes(str);
+        const isMetaSubtitle = (str?: string | null) => !str || ['Homepage top visual hero slides', 'Hero Subtitle', 'شرائح العرض البصري الرئيسية'].includes(str);
+
+        const loadedHeroTitle = heroContent.heading || (!isMetaTitle(hero?.title) ? hero?.title : 'Handcrafted Floral Arrangements');
+        const loadedHeroTitleAr = heroContent.heading_ar || (!isMetaTitle(hero?.title_ar) ? hero?.title_ar : 'تنسيقات زهور طبيعية منسقة يدوياً');
+        const loadedHeroSubtitle = heroContent.subheading || (!isMetaSubtitle(hero?.subtitle) ? hero?.subtitle : "Sourced daily for life's most memorable moments");
+        const loadedHeroSubtitleAr = heroContent.subheading_ar || (!isMetaSubtitle(hero?.subtitle_ar) ? hero?.subtitle_ar : 'مستوردة يومياً لتخليد أجمل لحظات العمر');
+
+        setCmsData({
+          announcementText: settings?.announcement_text || 'Fresh Flowers Sourced Daily • Same-Day Delivery • Premium Quality • Beautifully Wrapped',
+          announcementText_ar: settings?.announcement_text_ar || 'زهور نضرة يتم استيرادها يومياً • توصيل في نفس اليوم • جودة فاخرة • تغليف راقٍ ومميز',
+          announcementEnabled: settings?.announcement_enabled ?? true,
+          heroTitle: loadedHeroTitle,
+          heroTitle_ar: loadedHeroTitleAr,
+          heroSubtitle: loadedHeroSubtitle,
+          heroSubtitle_ar: loadedHeroSubtitleAr,
+          heroCtaText: heroContent.cta_text || 'Shop Flowers',
+          heroCtaText_ar: heroContent.cta_text_ar || 'تسوق الزهور',
+          heroCtaLink: heroContent.cta_link || '/products',
+          heroDesktopImage: heroContent.desktop_image || '',
+          heroMobileImage: heroContent.mobile_image || '',
+          showNewArrivals: sections.find((s: any) => s.section_key === 'new_arrivals')?.is_visible ?? true,
+          showOccasions: sections.find((s: any) => s.section_key === 'occasions')?.is_visible ?? true,
+          showHandBouquets: sections.find((s: any) => s.section_key === 'hand_bouquets')?.is_visible ?? true,
+          showFlowersInVase: sections.find((s: any) => s.section_key === 'flowers_in_vase')?.is_visible ?? true,
+          showBlog: sections.find((s: any) => s.section_key === 'blog')?.is_visible ?? true,
+        });
+      } catch (err) {
+        console.error('Failed to load CMS content from database', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCmsContent();
+  }, []);
 
   const handleAutoTranslate = async () => {
     setTranslating(true);
@@ -102,6 +151,15 @@ export default function AdminCMSPage() {
     setMediaPickerOpen(true);
   };
 
+  if (loading) {
+    return (
+      <div className="py-24 text-center flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-plum-800 mb-2" />
+        <span className="text-xs text-ink-500">Loading CMS configuration from database...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
@@ -150,223 +208,237 @@ export default function AdminCMSPage() {
         </div>
       )}
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form onSubmit={handleSave} className="space-y-8">
         
-        {/* Announcement Bar CMS */}
+        {/* 1. Announcement Bar Settings */}
         <div className="bg-white p-6 rounded-3xl border border-ink-100 shadow-xs space-y-4">
-          <h3 className="font-serif text-lg font-bold text-plum-900 border-b border-ink-100 pb-2">
-            1. Announcement Bar Settings
-          </h3>
-          <div className="space-y-4 text-xs">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center justify-between pb-3 border-b border-ink-100">
+            <div>
+              <h3 className="font-serif text-lg font-bold text-plum-900">Announcement Bar</h3>
+              <p className="text-xs text-ink-500">Top sticky promotional ribbon</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={cmsData.announcementEnabled}
                 onChange={(e) => setCmsData({ ...cmsData, announcementEnabled: e.target.checked })}
-                className="text-plum-800 rounded focus:ring-plum-800"
+                className="sr-only peer"
               />
-              <span className="font-semibold text-plum-900">Enable Announcement Bar</span>
+              <div className="w-11 h-6 bg-ink-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-plum-900"></div>
+              <span className="ms-3 text-xs font-semibold text-ink-700">
+                {cmsData.announcementEnabled ? 'Enabled' : 'Disabled'}
+              </span>
             </label>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-semibold text-plum-900 mb-1">Announcement Text (English)</label>
-                <input
-                  type="text"
-                  value={cmsData.announcementText}
-                  onChange={(e) => setCmsData({ ...cmsData, announcementText: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-plum-900 mb-1 font-arabic">نص الإعلان (العربية)</label>
-                <input
-                  type="text"
-                  dir="rtl"
-                  value={cmsData.announcementText_ar || ''}
-                  onChange={(e) => setCmsData({ ...cmsData, announcementText_ar: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30 font-arabic"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">
+                Announcement Text (English)
+              </label>
+              <input
+                type="text"
+                value={cmsData.announcementText}
+                onChange={(e) => setCmsData({ ...cmsData, announcementText: e.target.value })}
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">
+                Announcement Text (العربية)
+              </label>
+              <input
+                type="text"
+                dir="rtl"
+                value={cmsData.announcementText_ar}
+                onChange={(e) => setCmsData({ ...cmsData, announcementText_ar: e.target.value })}
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+              />
             </div>
           </div>
         </div>
 
-        {/* Hero Section CMS */}
+        {/* 2. Hero Section Settings */}
         <div className="bg-white p-6 rounded-3xl border border-ink-100 shadow-xs space-y-4">
-          <h3 className="font-serif text-lg font-bold text-plum-900 border-b border-ink-100 pb-2">
-            2. Hero Section Media & Content
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="pb-3 border-b border-ink-100">
+            <h3 className="font-serif text-lg font-bold text-plum-900">Hero Main Banner</h3>
+            <p className="text-xs text-ink-500">Above-the-fold full-width storefront hero</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Main Headline (English)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Title (English)</label>
               <textarea
                 rows={2}
                 value={cmsData.heroTitle}
                 onChange={(e) => setCmsData({ ...cmsData, heroTitle: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
               />
             </div>
-
             <div>
-              <label className="block font-semibold text-plum-900 mb-1 font-arabic">العنوان الرئيسي (العربية)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Title (العربية)</label>
               <textarea
                 rows={2}
                 dir="rtl"
-                value={cmsData.heroTitle_ar || ''}
+                value={cmsData.heroTitle_ar}
                 onChange={(e) => setCmsData({ ...cmsData, heroTitle_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30 font-arabic"
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Subtitle / Body (English)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Subtitle (English)</label>
               <textarea
                 rows={2}
                 value={cmsData.heroSubtitle}
                 onChange={(e) => setCmsData({ ...cmsData, heroSubtitle: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
               />
             </div>
-
             <div>
-              <label className="block font-semibold text-plum-900 mb-1 font-arabic">العنوان الفرعي (العربية)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Subtitle (العربية)</label>
               <textarea
                 rows={2}
                 dir="rtl"
-                value={cmsData.heroSubtitle_ar || ''}
+                value={cmsData.heroSubtitle_ar}
                 onChange={(e) => setCmsData({ ...cmsData, heroSubtitle_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30 font-arabic"
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">CTA Button Text (English)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">CTA Button Text (English)</label>
               <input
                 type="text"
                 value={cmsData.heroCtaText}
                 onChange={(e) => setCmsData({ ...cmsData, heroCtaText: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
               />
             </div>
-
             <div>
-              <label className="block font-semibold text-plum-900 mb-1 font-arabic">نص زر الإجراء (العربية)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">CTA Button Text (العربية)</label>
               <input
                 type="text"
                 dir="rtl"
-                value={cmsData.heroCtaText_ar || ''}
+                value={cmsData.heroCtaText_ar}
                 onChange={(e) => setCmsData({ ...cmsData, heroCtaText_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30 font-arabic"
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
               />
             </div>
-
-            <div className="sm:col-span-2">
-              <label className="block font-semibold text-plum-900 mb-1">CTA Destination Link</label>
+            <div>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">CTA Link Destination</label>
               <input
                 type="text"
                 value={cmsData.heroCtaLink}
                 onChange={(e) => setCmsData({ ...cmsData, heroCtaLink: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
               />
             </div>
+          </div>
 
+          {/* Hero Images Picker */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Desktop Background Image (Cloudinary / URL)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Desktop Hero Image URL</label>
               <div className="flex gap-2">
                 <input
                   type="text"
+                  placeholder="https://res.cloudinary.com/..."
                   value={cmsData.heroDesktopImage}
                   onChange={(e) => setCmsData({ ...cmsData, heroDesktopImage: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-3 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
                 />
                 <button
                   type="button"
                   onClick={() => handleOpenPicker('desktop')}
-                  className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0"
+                  className="bg-cream-200 hover:bg-cream-300 text-plum-900 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0"
                 >
                   <ImageIcon className="w-4 h-4" />
-                  <span>Choose</span>
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-plum-900 mb-1">Mobile Background Image (Portrait 9:16)</label>
+              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Mobile Hero Image URL</label>
               <div className="flex gap-2">
                 <input
                   type="text"
+                  placeholder="https://res.cloudinary.com/..."
                   value={cmsData.heroMobileImage}
                   onChange={(e) => setCmsData({ ...cmsData, heroMobileImage: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-3 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
                 />
                 <button
                   type="button"
                   onClick={() => handleOpenPicker('mobile')}
-                  className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0"
+                  className="bg-cream-200 hover:bg-cream-300 text-plum-900 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0"
                 >
                   <ImageIcon className="w-4 h-4" />
-                  <span>Choose</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section Visibility Controls */}
+        {/* 3. Homepage Section Visibility Toggles */}
         <div className="bg-white p-6 rounded-3xl border border-ink-100 shadow-xs space-y-4">
-          <h3 className="font-serif text-lg font-bold text-plum-900 border-b border-ink-100 pb-2">
-            3. Homepage Section Visibility
-          </h3>
-          <div className="space-y-3 text-xs">
-            <label className="flex items-center justify-between p-3 rounded-xl bg-cream-50 border border-ink-100 cursor-pointer">
-              <span className="font-semibold text-plum-900">New Arrivals Rail (وصل حديثاً)</span>
+          <div className="pb-3 border-b border-ink-100">
+            <h3 className="font-serif text-lg font-bold text-plum-900">Section Visibility Control</h3>
+            <p className="text-xs text-ink-500">Enable or disable specific sections on the storefront homepage</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
+              <span className="text-xs font-semibold text-plum-900">New Arrivals Rail</span>
               <input
                 type="checkbox"
                 checked={cmsData.showNewArrivals}
                 onChange={(e) => setCmsData({ ...cmsData, showNewArrivals: e.target.checked })}
-                className="text-plum-800 rounded"
+                className="w-4 h-4 accent-plum-900 rounded"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-cream-50 border border-ink-100 cursor-pointer">
-              <span className="font-semibold text-plum-900">Choose Blooms For Your Moments / Occasions (تسوق حسب المناسبة)</span>
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
+              <span className="text-xs font-semibold text-plum-900">Shop by Occasion</span>
               <input
                 type="checkbox"
                 checked={cmsData.showOccasions}
                 onChange={(e) => setCmsData({ ...cmsData, showOccasions: e.target.checked })}
-                className="text-plum-800 rounded"
+                className="w-4 h-4 accent-plum-900 rounded"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-cream-50 border border-ink-100 cursor-pointer">
-              <span className="font-semibold text-plum-900">Hand Bouquets Rail (باقات اليد)</span>
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
+              <span className="text-xs font-semibold text-plum-900">Hand Bouquets Rail</span>
               <input
                 type="checkbox"
                 checked={cmsData.showHandBouquets}
                 onChange={(e) => setCmsData({ ...cmsData, showHandBouquets: e.target.checked })}
-                className="text-plum-800 rounded"
+                className="w-4 h-4 accent-plum-900 rounded"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-cream-50 border border-ink-100 cursor-pointer">
-              <span className="font-semibold text-plum-900">Flowers in Vase Section (زهور في فازة)</span>
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
+              <span className="text-xs font-semibold text-plum-900">Flowers in Vase Grid</span>
               <input
                 type="checkbox"
                 checked={cmsData.showFlowersInVase}
                 onChange={(e) => setCmsData({ ...cmsData, showFlowersInVase: e.target.checked })}
-                className="text-plum-800 rounded"
+                className="w-4 h-4 accent-plum-900 rounded"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-cream-50 border border-ink-100 cursor-pointer">
-              <span className="font-semibold text-plum-900">From Our Blog Section (من مدونتنا)</span>
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
+              <span className="text-xs font-semibold text-plum-900">From Our Blog</span>
               <input
                 type="checkbox"
                 checked={cmsData.showBlog}
                 onChange={(e) => setCmsData({ ...cmsData, showBlog: e.target.checked })}
-                className="text-plum-800 rounded"
+                className="w-4 h-4 accent-plum-900 rounded"
               />
             </label>
           </div>
@@ -374,6 +446,7 @@ export default function AdminCMSPage() {
 
       </form>
 
+      {/* Media Picker Modal */}
       <MediaPickerModal
         isOpen={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
@@ -384,9 +457,7 @@ export default function AdminCMSPage() {
             setCmsData({ ...cmsData, heroMobileImage: url });
           }
         }}
-        title={`Select ${pickerTargetField === 'desktop' ? 'Desktop' : 'Mobile'} Hero Image`}
       />
     </div>
   );
 }
-

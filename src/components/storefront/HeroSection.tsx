@@ -1,133 +1,116 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { ArrowRight, Flower, Sparkles } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
+import { HomepageSection } from '@/types';
 
-export function HeroSection() {
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const { t, isRtl } = useLocale();
+interface HeroSectionProps {
+  section?: HomepageSection;
+}
 
-  const slides = [
-    {
-      eyebrow: t.hero.slide1Eyebrow,
-      title: t.hero.slide1Title,
-      subtitle: t.hero.slide1Subtitle,
-      desktopImage: '/demo-media/hero_desktop.jpg',
-      mobileImage: '/demo-media/hero_mobile_v2.jpg',
-      ctaText: t.hero.slide1Cta,
-      ctaLink: '/products',
-    },
-    {
-      eyebrow: t.hero.slide2Eyebrow,
-      title: t.hero.slide2Title,
-      subtitle: t.hero.slide2Subtitle,
-      desktopImage: '/demo-media/hero_slide_two.jpg',
-      mobileImage: '/demo-media/hero_slide_two.jpg',
-      ctaText: t.hero.slide2Cta,
-      ctaLink: '/products',
-    },
-  ];
+export function HeroSection({ section }: HeroSectionProps) {
+  const { t, isRtl, getLocalized, locale } = useLocale();
 
-  const currentSlide = slides[currentSlideIndex];
+  const content = section?.content_json || {};
 
-  const nextSlide = () => {
-    setCurrentSlideIndex((prev) => (prev + 1) % slides.length);
+  // Check if section title is CMS administrative metadata vs customer-facing title
+  const isInternalMetaTitle = (titleStr?: string | null) => {
+    if (!titleStr) return true;
+    const lower = titleStr.toLowerCase().trim();
+    return lower === 'main hero slider' || lower === 'hero banner' || lower === 'hero section' || titleStr === 'واجهة البانر الرئيسي';
   };
 
-  const prevSlide = () => {
-    setCurrentSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
+  const isInternalMetaSubtitle = (subStr?: string | null) => {
+    if (!subStr) return true;
+    const lower = subStr.toLowerCase().trim();
+    return lower === 'homepage top visual hero slides' || lower === 'hero subtitle' || subStr === 'شرائح العرض البصري الرئيسية';
   };
+
+  const rawTitleEn = content.heading || (!isInternalMetaTitle(section?.title) ? section?.title : null);
+  const rawTitleAr = content.heading_ar || (!isInternalMetaTitle(section?.title_ar) ? section?.title_ar : null);
+  const title = getLocalized(rawTitleEn, rawTitleAr) || t.hero.slide1Title;
+
+  const rawSubtitleEn = content.subheading || (!isInternalMetaSubtitle(section?.subtitle) ? section?.subtitle : null);
+  const rawSubtitleAr = content.subheading_ar || (!isInternalMetaSubtitle(section?.subtitle_ar) ? section?.subtitle_ar : null);
+  const subtitle = getLocalized(rawSubtitleEn, rawSubtitleAr) || t.hero.slide1Subtitle;
+
+  const ctaText = (locale === 'ar' ? content.cta_text_ar : content.cta_text) || content.cta_text || t.hero.slide1Cta;
+  const ctaLink = content.cta_link || '/products';
+  const desktopImage = content.desktop_image || content.image_url || '';
+  const mobileImage = content.mobile_image || desktopImage || '';
 
   return (
-    <section className="relative w-full overflow-hidden bg-plum-900 text-white min-h-[560px] lg:min-h-[640px] flex items-center">
-      {/* Background Image: Desktop */}
-      <div className="hidden md:block absolute inset-0 z-0">
-        <Image
-          src={currentSlide.desktopImage}
-          alt={currentSlide.title}
-          fill
-          priority
-          className="object-cover object-right lg:object-center transition-opacity duration-700 brightness-95"
-        />
-        {/* Soft gradient overlay for desktop readability */}
-        <div className={`absolute inset-0 ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/85 via-plum-950/40 to-transparent w-full md:w-3/4`} />
-      </div>
+    <section className="relative w-full overflow-hidden bg-plum-950 text-white min-h-[520px] lg:min-h-[600px] flex items-center">
+      {/* Background Image (When configured in CMS) */}
+      {desktopImage ? (
+        <>
+          <div className="hidden md:block absolute inset-0 z-0">
+            <Image
+              src={desktopImage}
+              alt={title || 'Burble Flowers'}
+              fill
+              priority
+              className="object-cover object-right lg:object-center brightness-90 transition-opacity duration-700"
+            />
+            {/* Soft directional gradient overlay for desktop readability */}
+            <div className={`absolute inset-0 ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/90 via-plum-950/50 to-transparent w-full md:w-3/4`} />
+          </div>
 
-      {/* Background Image: Mobile */}
-      <div className="md:hidden absolute inset-0 z-0">
-        <Image
-          src={currentSlide.mobileImage}
-          alt={currentSlide.title}
-          fill
-          priority
-          className="object-cover object-top transition-opacity duration-700"
-        />
-        {/* Dark gradient from bottom for mobile portrait overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-plum-950/90 via-plum-950/50 to-plum-900/30" />
-      </div>
+          <div className="md:hidden absolute inset-0 z-0">
+            <Image
+              src={mobileImage || desktopImage}
+              alt={title || 'Burble Flowers'}
+              fill
+              priority
+              className="object-cover object-top transition-opacity duration-700"
+            />
+            {/* Dark gradient for mobile readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-plum-950/95 via-plum-950/60 to-plum-900/30" />
+          </div>
+        </>
+      ) : (
+        /* Neutral Luxury Floral Gradient Background */
+        <div className="absolute inset-0 bg-radial-[circle_at_70%_30%] from-plum-800/80 via-plum-950 to-plum-950 z-0">
+          <div className="absolute -bottom-24 -end-24 w-96 h-96 rounded-full bg-blush-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -start-24 w-96 h-96 rounded-full bg-plum-700/20 blur-3xl pointer-events-none" />
+        </div>
+      )}
 
-      {/* Hero Content Overlay */}
+      {/* Hero Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16 md:py-24">
         <div className="max-w-xl">
-          {currentSlide.eyebrow && (
-            <p className="text-[11px] uppercase tracking-widest text-blush-200 font-semibold mb-3">
-              {currentSlide.eyebrow}
-            </p>
-          )}
+          <div className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-plum-900/70 border border-plum-700/50 text-blush-200 text-[11px] uppercase tracking-widest font-semibold px-3.5 py-1.5 rounded-full mb-4 backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-blush-300" />
+            <span>{t.hero.slide1Eyebrow}</span>
+          </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal leading-[1.15] text-white tracking-tight whitespace-pre-line mb-4 drop-shadow-sm">
-            {currentSlide.title}
+            {title}
           </h1>
 
           <p className="text-sm sm:text-base text-plum-100 font-light leading-relaxed mb-8 max-w-md">
-            {currentSlide.subtitle}
+            {subtitle}
           </p>
 
-          <div className="flex items-center space-x-4 rtl:space-x-reverse">
+          <div className="flex flex-wrap items-center gap-4">
             <Link
-              href={currentSlide.ctaLink}
-              className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-plum-800 hover:bg-plum-700 text-white text-xs font-semibold px-6 py-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+              href={ctaLink}
+              className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-plum-800 hover:bg-plum-700 text-white text-xs font-semibold px-7 py-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 border border-plum-600/30"
             >
-              <span>{currentSlide.ctaText}</span>
+              <span>{ctaText}</span>
               <ArrowRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
             </Link>
 
-            <button
-              onClick={() => alert(t.hero.videoComingSoon)}
-              className="inline-flex items-center space-x-2 rtl:space-x-reverse text-xs text-white/90 hover:text-white bg-white/15 backdrop-blur-md px-4 py-3 rounded-full hover:bg-white/25 transition-all"
+            <Link
+              href="/about"
+              className="inline-flex items-center space-x-2 rtl:space-x-reverse text-xs text-white/90 hover:text-white bg-white/10 backdrop-blur-md px-5 py-3.5 rounded-full hover:bg-white/20 transition-all border border-white/10"
             >
-              <div className="w-6 h-6 rounded-full bg-white text-plum-900 flex items-center justify-center">
-                <Play className={`w-3 h-3 fill-current ${isRtl ? '-translate-x-0.5' : 'translate-x-0.5'}`} />
-              </div>
-              <span className="font-medium">{t.hero.watchVideo}</span>
-            </button>
-          </div>
-
-          {/* Slider Controls & Counter */}
-          <div className="mt-12 flex items-center space-x-4 rtl:space-x-reverse text-xs text-plum-200">
-            <span className="font-mono font-semibold">
-              0{currentSlideIndex + 1} <span className="opacity-40">/ 0{slides.length}</span>
-            </span>
-
-            <div className="flex items-center space-x-1.5 rtl:space-x-reverse">
-              <button
-                onClick={prevSlide}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label={t.common.previous}
-              >
-                <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-                aria-label={t.common.next}
-              >
-                <ChevronRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
+              <Flower className="w-4 h-4 text-blush-300" />
+              <span className="font-medium">{t.common.aboutUs}</span>
+            </Link>
           </div>
         </div>
       </div>

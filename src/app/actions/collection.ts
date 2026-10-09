@@ -20,6 +20,11 @@ export interface SaveCollectionPayload {
 }
 
 export async function getAdminCollectionsAction(): Promise<{ success: boolean; data?: (Collection & { product_ids?: string[] })[]; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin authentication required.' };
+  }
+
   try {
     const supabase = await createClient();
     const { data: collections, error } = await supabase

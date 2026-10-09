@@ -1,22 +1,27 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShoppingBag, Plus, Minus, Check, MessageSquare } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingBag, Plus, Minus, Check, MessageSquare, Zap } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/lib/cart/store';
 import { useLocale } from '@/lib/i18n/context';
-import { createWhatsAppOrderLink } from '@/lib/whatsapp/message';
 
 interface ProductDetailClientProps {
   product: Product;
   whatsappNumber: string;
+  freeShippingThreshold?: number;
+  flatShippingFee?: number;
 }
 
-export function ProductDetailClient({ product, whatsappNumber }: ProductDetailClientProps) {
+export function ProductDetailClient({
+  product,
+}: ProductDetailClientProps) {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
+  const router = useRouter();
 
   const handleAddToCart = () => {
     addItem(product, quantity);
@@ -24,26 +29,12 @@ export function ProductDetailClient({ product, whatsappNumber }: ProductDetailCl
     setTimeout(() => setAdded(false), 2000);
   };
 
-  const handleWhatsAppQuickOrder = () => {
-    const waUrl = createWhatsAppOrderLink({
-      whatsappNumber,
-      orderNumber: `QUICK-${Math.floor(1000 + Math.random() * 9000)}`,
-      formData: {
-        customer_name: locale === 'ar' ? 'عميل الطلب السريع' : 'Direct Order Customer',
-        customer_email: 'pending@whatsapp.com',
-        customer_phone: '+974 0000 0000',
-        delivery_address: locale === 'ar' ? 'الدوحة، قطر' : 'Doha, Qatar',
-        city: locale === 'ar' ? 'الدوحة' : 'Doha',
-        payment_method: 'whatsapp',
-      },
-      items: [{ product, quantity }],
-      subtotal: product.price * quantity,
-      shippingFee: product.price * quantity >= 300 ? 0 : 25,
-      totalAmount: (product.price * quantity) + (product.price * quantity >= 300 ? 0 : 25),
-      locale,
-    });
+  const handleBuyNow = () => {
+    router.push(`/checkout?buyNow=${encodeURIComponent(product.slug)}&qty=${quantity}`);
+  };
 
-    window.open(waUrl, '_blank');
+  const handleWhatsAppOrder = () => {
+    router.push(`/checkout?buyNow=${encodeURIComponent(product.slug)}&qty=${quantity}&method=whatsapp`);
   };
 
   return (
@@ -54,9 +45,10 @@ export function ProductDetailClient({ product, whatsappNumber }: ProductDetailCl
         </div>
       ) : (
         <>
-          {/* Quantity & Add to Cart Row */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center border border-ink-200 rounded-xl bg-cream-50 p-1">
+          {/* Quantity & Actions Row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Quantity Selector */}
+            <div className="flex items-center justify-between sm:justify-start border border-ink-200 rounded-xl bg-cream-50 p-1 shrink-0">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="p-2 text-ink-700 hover:text-plum-900 transition-colors"
@@ -74,12 +66,13 @@ export function ProductDetailClient({ product, whatsappNumber }: ProductDetailCl
               </button>
             </div>
 
+            {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              className={`flex-1 py-3.5 px-6 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-md ${
+              className={`flex-1 py-3.5 px-5 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-2 border border-plum-900 ${
                 added
-                  ? 'bg-emerald-700 text-white'
-                  : 'bg-plum-900 text-white hover:bg-plum-800 active:scale-95'
+                  ? 'bg-emerald-700 border-emerald-700 text-white'
+                  : 'bg-white text-plum-900 hover:bg-plum-50 active:scale-95 shadow-xs'
               }`}
             >
               {added ? (
@@ -94,12 +87,21 @@ export function ProductDetailClient({ product, whatsappNumber }: ProductDetailCl
                 </>
               )}
             </button>
+
+            {/* Buy Now Button */}
+            <button
+              onClick={handleBuyNow}
+              className="flex-1 py-3.5 px-6 rounded-xl font-semibold text-xs bg-plum-900 hover:bg-plum-800 text-white transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+            >
+              <Zap className="w-4 h-4 fill-current" />
+              <span>{t.product.buyNow}</span>
+            </button>
           </div>
 
           {/* Direct WhatsApp Order CTA */}
           <button
-            onClick={handleWhatsAppQuickOrder}
-            className="w-full py-3.5 px-6 rounded-xl font-semibold text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center justify-center gap-2 shadow-sm"
+            onClick={handleWhatsAppOrder}
+            className="w-full py-3.5 px-6 rounded-xl font-semibold text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
           >
             <MessageSquare className="w-4 h-4 fill-current" />
             <span>{t.product.orderWhatsApp}</span>

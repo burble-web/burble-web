@@ -1,18 +1,36 @@
 import { MetadataRoute } from 'next';
-import { DEMO_PRODUCTS } from '@/lib/data/storefront';
+import { getProducts, getBlogPosts } from '@/lib/data/queries';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://burbleflowers.com';
 
-  const productUrls: MetadataRoute.Sitemap = DEMO_PRODUCTS.map((p) => ({
+  const [products, blogPosts] = await Promise.all([
+    getProducts(),
+    getBlogPosts(100),
+  ]);
+
+  const productUrls: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${baseUrl}/products/${p.slug}`,
-    lastModified: new Date(p.updated_at),
+    lastModified: new Date(p.updated_at || p.created_at || new Date()),
     changeFrequency: 'weekly',
     priority: 0.8,
     alternates: {
       languages: {
         en: `${baseUrl}/products/${p.slug}`,
         ar: `${baseUrl}/products/${p.slug}`,
+      },
+    },
+  }));
+
+  const blogUrls: MetadataRoute.Sitemap = blogPosts.map((b) => ({
+    url: `${baseUrl}/blog/${b.slug}`,
+    lastModified: new Date(b.published_at || b.created_at || new Date()),
+    changeFrequency: 'monthly',
+    priority: 0.6,
+    alternates: {
+      languages: {
+        en: `${baseUrl}/blog/${b.slug}`,
+        ar: `${baseUrl}/blog/${b.slug}`,
       },
     },
   }));
@@ -54,7 +72,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       },
     },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+      alternates: {
+        languages: {
+          en: `${baseUrl}/blog`,
+          ar: `${baseUrl}/blog`,
+        },
+      },
+    },
     ...productUrls,
+    ...blogUrls,
   ];
 }
-

@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Layers } from 'lucide-react';
 import { Collection } from '@/types';
 import { useLocale } from '@/lib/i18n/context';
 
@@ -37,13 +38,17 @@ export function CollectionsSection({ collections }: CollectionsSectionProps) {
                 className="group flex flex-col items-center space-y-3"
               >
                 <div className="relative w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-blush-200 bg-white p-1 group-hover:border-plum-800 transition-all duration-300 shadow-xs group-hover:scale-105">
-                  <div className="relative w-full h-full rounded-full overflow-hidden bg-cream-200">
-                    <Image
-                      src={item.image_url || '/demo-media/product_blush_bouquet.jpg'}
-                      alt={title}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
+                  <div className="relative w-full h-full rounded-full overflow-hidden bg-cream-200 flex items-center justify-center">
+                    {item.image_url ? (
+                      <Image
+                        src={item.image_url}
+                        alt={title}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : (
+                      <Layers className="w-6 h-6 text-plum-400 group-hover:scale-110 transition-transform" />
+                    )}
                   </div>
                 </div>
                 <span className="text-xs font-semibold text-plum-900 group-hover:text-plum-700 transition-colors">

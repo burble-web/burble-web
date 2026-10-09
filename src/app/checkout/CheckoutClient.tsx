@@ -3,24 +3,39 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, MessageSquare, Banknote, CheckCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
-import { useCart } from '@/lib/cart/store';
+import { useRouter } from 'next/navigation';
+import { ShoppingBag, MessageSquare, Banknote, ArrowLeft, ArrowRight, Loader2, AlertCircle, Zap, RefreshCw } from 'lucide-react';
+import { useCart, UUID_REGEX } from '@/lib/cart/store';
 import { processCheckoutAction } from '@/app/actions/order';
 import { createWhatsAppOrderLink } from '@/lib/whatsapp/message';
-import { SiteSettings, Order } from '@/types';
+import { SiteSettings, Order, CartItem } from '@/types';
 import { useLocale } from '@/lib/i18n/context';
 import { getLocalizedValue, formatPrice } from '@/lib/i18n/utils';
 
 interface CheckoutClientProps {
   settings: SiteSettings;
+  buyNowItem?: CartItem | null;
+  buyNowError?: string | null;
+  initialMethod?: 'cod' | 'whatsapp';
 }
 
-export function CheckoutClient({ settings }: CheckoutClientProps) {
-  const { items, subtotal, clearCart } = useCart();
+export function CheckoutClient({
+  settings,
+  buyNowItem = null,
+  buyNowError = null,
+  initialMethod = 'cod',
+}: CheckoutClientProps) {
+  const router = useRouter();
+  const { items: cartItems, subtotal: cartSubtotal, removePurchasedItems, sanitize, clearCart } = useCart();
   const { locale, direction, t } = useLocale();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
+
+  const isBuyNow = Boolean(buyNowItem);
+  const activeItems: CartItem[] = isBuyNow && buyNowItem ? [buyNowItem] : cartItems;
+  const activeSubtotal = isBuyNow && buyNowItem
+    ? buyNowItem.product.price * buyNowItem.quantity
+    : cartSubtotal;
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -31,11 +46,11 @@ export function CheckoutClient({ settings }: CheckoutClientProps) {
     district: '',
     pincode: '',
     delivery_notes: '',
-    payment_method: 'cod' as 'whatsapp' | 'cod',
+    payment_method: (initialMethod === 'whatsapp' ? 'whatsapp' : 'cod') as 'whatsapp' | 'cod',
   });
 
-  const shippingFee = subtotal >= settings.free_shipping_threshold || subtotal === 0 ? 0 : settings.flat_shipping_fee;
-  const totalAmount = subtotal + shippingFee;
+  const shippingFee = activeSubtotal >= settings.free_shipping_threshold || activeSubtotal === 0 ? 0 : settings.flat_shipping_fee;
+  const totalAmount = activeSubtotal + shippingFee;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,16 +58,34 @@ export function CheckoutClient({ settings }: CheckoutClientProps) {
 
   const isSubmittingRef = React.useRef(false);
 
+  // Stale items detection & sanitization check
+  const hasInvalidItem = !isBuyNow && cartItems.some((item) => !item?.product?.id || !UUID_REGEX.test(item.product.id));
+
+  const handleCleanCart = () => {
+    sanitize();
+    setErrorMsg(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
+    // Prevent duplicate clicks/submissions while request is in progress
     if (isSubmittingRef.current || loading) {
       return;
     }
 
-    if (items.length === 0) {
+    if (activeItems.length === 0) {
       setErrorMsg(t.checkout.emptyCartError);
+      return;
+    }
+
+    // Client-side pre-validation of product UUIDs
+    const invalidItem = activeItems.find((item) => !item?.product?.id || !UUID_REGEX.test(item.product.id));
+    if (invalidItem) {
+      setErrorMsg(locale === 'ar' 
+        ? 'أحد المنتجات في السلة يحتوي على معرف غير صالح. يرجى تحديث السلة.' 
+        : 'One or more items in your cart have an invalid identifier. Please refresh or update your cart.');
       return;
     }
 
@@ -60,7 +93,7 @@ export function CheckoutClient({ settings }: CheckoutClientProps) {
     setLoading(true);
 
     try {
-      const res = await processCheckoutAction({ ...formData, locale }, items);
+      const res = await processCheckoutAction({ ...formData, locale }, activeItems);
 
       if (!res.success || !res.order) {
         setErrorMsg(res.error || (locale === 'ar' ? 'تعذر إتمام الطلب. يرجى المحاولة مرة أخرى.' : 'Failed to place order. Please try again.'));
@@ -69,96 +102,75 @@ export function CheckoutClient({ settings }: CheckoutClientProps) {
         return;
       }
 
-      // If WhatsApp order, open link and save state
+      // If standard cart checkout, clear only the items actually purchased, preserving unpurchased items
+      if (!isBuyNow) {
+        removePurchasedItems(activeItems.map((it) => it.product.id));
+      }
+
+      // Build WhatsApp URL if WhatsApp ordering was chosen
       if (formData.payment_method === 'whatsapp') {
         const waUrl = createWhatsAppOrderLink({
           whatsappNumber: settings.whatsapp_number,
           orderNumber: res.order.order_number,
           formData,
-          items,
-          subtotal,
-          shippingFee,
-          totalAmount,
+          items: activeItems,
+          subtotal: res.order.subtotal,
+          shippingFee: res.order.shipping_fee,
+          totalAmount: res.order.total_amount,
           currencySymbol: settings.currency_symbol,
           locale,
         });
 
-        clearCart();
-        setCompletedOrder(res.order);
-        window.open(waUrl, '_blank');
+        // Attempt non-blocking window.open in browser
+        try {
+          window.open(waUrl, '_blank');
+        } catch (popupErr) {
+          console.warn('[Checkout] Popup blocker intercepted window.open, fallback button provided on success page.');
+        }
+
+        // Navigate immediately to dedicated success route
+        router.push(`/order-success/${encodeURIComponent(res.order.order_number)}?source=whatsapp&waUrl=${encodeURIComponent(waUrl)}`);
       } else {
-        // Cash on Delivery order
-        clearCart();
-        setCompletedOrder(res.order);
+        // Cash on Delivery: navigate immediately to dedicated success route
+        router.push(`/order-success/${encodeURIComponent(res.order.order_number)}`);
       }
     } catch (err: any) {
       setErrorMsg(err?.message || (locale === 'ar' ? 'حدث خطأ غير متوقع.' : 'An unexpected error occurred.'));
-      isSubmittingRef.current = false;
-    } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
-  // Confirmation view after order completion
-  if (completedOrder) {
-    const isAr = locale === 'ar';
+  // If Buy Now parameter had an error (e.g. out of stock or inactive product)
+  if (buyNowError) {
     return (
-      <div className="bg-white rounded-3xl p-8 sm:p-12 border border-ink-100 shadow-sm text-center max-w-2xl mx-auto my-8 space-y-6">
-        <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-xs">
-          <CheckCircle className="w-8 h-8 stroke-[1.5]" />
+      <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-ink-100 shadow-xs max-w-xl mx-auto my-8">
+        <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3 stroke-[1.5]" />
+        <h2 className="font-serif text-2xl font-bold text-plum-900 mb-2">
+          {locale === 'ar' ? 'تعذر إتمام الشراء الفوري' : 'Buy Now Unavailable'}
+        </h2>
+        <p className="text-xs text-ink-600 mb-6 leading-relaxed">
+          {buyNowError}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/products"
+            className="px-6 py-2.5 bg-plum-900 text-white text-xs font-semibold rounded-full hover:bg-plum-800 transition-colors"
+          >
+            {t.product.allProductsPill}
+          </Link>
+          <Link
+            href="/cart"
+            className="px-6 py-2.5 bg-cream-100 border border-ink-200 text-plum-900 text-xs font-semibold rounded-full hover:bg-cream-200 transition-colors"
+          >
+            {t.cart.title}
+          </Link>
         </div>
-
-        <div>
-          <span className="inline-block bg-plum-100 text-plum-900 text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider mb-2">
-            {t.checkout.orderNumberLabel}: #{completedOrder.order_number}
-          </span>
-          <h2 className="font-serif text-3xl font-bold text-plum-900">
-            {completedOrder.source === 'whatsapp' 
-              ? (isAr ? 'تم تجهيز طلب الواتساب!' : 'WhatsApp Order Prepared!') 
-              : t.checkout.orderSuccessTitle}
-          </h2>
-          <p className="text-xs text-ink-500 mt-2 max-w-md mx-auto">
-            {completedOrder.source === 'whatsapp'
-              ? (isAr 
-                  ? 'تم فتح تطبيق واتساب. أرسل الرسالة الجاهزة لفريقنا لتأكيد تفاصيل وموعد التوصيل.' 
-                  : 'Your WhatsApp chat has opened. Send the pre-filled message to our team to confirm delivery details.')
-              : (isAr
-                  ? `تم استلام طلبك بنجاح وسنقوم بتوصيل باقتك الطازجة عبر الدفع عند الاستلام.`
-                  : `A confirmation email has been sent to ${completedOrder.customer_email}. We will deliver your fresh blooms via Cash on Delivery.`)}
-          </p>
-        </div>
-
-        <div className="bg-cream-100 p-4 rounded-2xl text-start text-xs space-y-2 border border-ink-100/60">
-          <div className="flex justify-between font-semibold text-plum-900">
-            <span>{isAr ? 'اسم العميل:' : 'Customer Name:'}</span>
-            <span>{completedOrder.customer_name}</span>
-          </div>
-          <div className="flex justify-between font-semibold text-plum-900">
-            <span>{isAr ? 'رقم الهاتف:' : 'Contact Phone:'}</span>
-            <span dir="ltr">{completedOrder.customer_phone}</span>
-          </div>
-          <div className="flex justify-between font-semibold text-plum-900">
-            <span>{isAr ? 'عنوان التوصيل:' : 'Delivery Address:'}</span>
-            <span>{completedOrder.delivery_address}, {completedOrder.city}</span>
-          </div>
-          <div className="flex justify-between font-bold text-plum-900 pt-2 border-t border-ink-200">
-            <span>{t.checkout.totalAmount}:</span>
-            <span>{formatPrice(completedOrder.total_amount, locale, settings.currency_symbol)} ({completedOrder.source === 'whatsapp' ? (isAr ? 'واتساب' : 'WHATSAPP') : (isAr ? 'عند الاستلام' : 'COD')})</span>
-          </div>
-        </div>
-
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 bg-plum-900 text-white font-semibold text-xs px-6 py-3 rounded-full hover:bg-plum-800 transition-colors"
-        >
-          {direction === 'rtl' ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-          <span>{t.checkout.backToHome}</span>
-        </Link>
       </div>
     );
   }
 
-  if (items.length === 0) {
+  if (activeItems.length === 0) {
     return (
       <div className="bg-white rounded-3xl p-12 text-center border border-ink-100 my-8">
         <ShoppingBag className="w-12 h-12 text-ink-300 mx-auto mb-3 stroke-[1.5]" />
@@ -179,6 +191,35 @@ export function CheckoutClient({ settings }: CheckoutClientProps) {
       {/* Left Column: Form Details */}
       <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-ink-100 shadow-xs space-y-6">
         
+        {isBuyNow && (
+          <div className="p-3 bg-plum-50 border border-plum-200 text-plum-900 text-xs rounded-xl font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-plum-800 fill-current" />
+              <span>{locale === 'ar' ? 'أنت تكمل شراء هذا المنتج مباشرة (Buy Now)' : 'Direct Express Checkout (Buy Now)'}</span>
+            </div>
+            <Link href="/cart" className="text-[11px] underline font-bold hover:text-plum-700">
+              {locale === 'ar' ? 'عرض السلة الكاملة' : 'View Full Cart'}
+            </Link>
+          </div>
+        )}
+
+        {hasInvalidItem && (
+          <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-950 text-xs rounded-xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{locale === 'ar' ? 'تم اكتشاف عناصر غير صالحة في السلة.' : 'Invalid or stale items detected in cart.'}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleCleanCart}
+              className="inline-flex items-center gap-1 bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold px-3 py-1 rounded-lg text-[11px] transition-colors shrink-0"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>{locale === 'ar' ? 'تنظيف السلة' : 'Clean Cart'}</span>
+            </button>
+          </div>
+        )}
+
         {errorMsg && (
           <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl font-medium">
             {errorMsg}
@@ -369,7 +410,7 @@ export function CheckoutClient({ settings }: CheckoutClientProps) {
           </h3>
 
           <div className="space-y-3 max-h-72 overflow-y-auto px-1 mb-6">
-            {items.map((item) => {
+            {activeItems.map((item) => {
               const productName = getLocalizedValue({
                 locale,
                 english: item.product.name,
@@ -402,7 +443,7 @@ export function CheckoutClient({ settings }: CheckoutClientProps) {
           <div className="space-y-2 pt-4 border-t border-ink-100 text-xs">
             <div className="flex justify-between text-ink-700">
               <span>{t.checkout.itemsSubtotal}</span>
-              <span>{formatPrice(subtotal, locale, settings.currency_symbol)}</span>
+              <span>{formatPrice(activeSubtotal, locale, settings.currency_symbol)}</span>
             </div>
             <div className="flex justify-between text-ink-700">
               <span>{t.checkout.deliveryFee}</span>

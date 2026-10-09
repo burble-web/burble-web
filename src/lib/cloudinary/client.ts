@@ -5,10 +5,10 @@
  */
 
 export function getCloudinaryUrl(
-  src: string,
+  src?: string | null,
   options?: { width?: number; height?: number; quality?: string | number; crop?: string }
 ): string {
-  if (!src) return '/demo-media/product_blush_bouquet.jpg';
+  if (!src) return '';
 
   // If it's already a full HTTP URL or local static asset, process or return
   if (!src.includes('res.cloudinary.com')) {
@@ -32,8 +32,8 @@ export function getCloudinaryUrl(
  * Custom loader for Next.js <Image /> component
  */
 export function cloudinaryLoader({ src, width, quality }: { src: string; width: number; quality?: number }) {
-  if (!src.includes('res.cloudinary.com')) {
-    return src;
+  if (!src || !src.includes('res.cloudinary.com')) {
+    return src || '';
   }
   return getCloudinaryUrl(src, { width, quality: quality || 'auto' });
 }

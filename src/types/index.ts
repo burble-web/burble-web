@@ -132,7 +132,7 @@ export interface MediaAsset {
 }
 
 export type OrderSource = 'whatsapp' | 'cod';
-export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'out_of_delivery' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'out_for_delivery' | 'delivered' | 'cancelled';
 
 export interface OrderItem {
   id?: string;

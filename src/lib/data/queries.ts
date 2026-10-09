@@ -1,14 +1,23 @@
 import { createPublicClient } from '@/lib/supabase/server';
-import {
-  DEMO_SITE_SETTINGS,
-  DEMO_CATEGORIES,
-  DEMO_PRODUCTS,
-  DEMO_OCCASIONS,
-  DEMO_FLOWERS,
-  DEMO_COLLECTIONS,
-  DEMO_BLOG_POSTS,
-} from './storefront';
-import { Category, Collection, Product, BlogPost, SiteSettings } from '@/types';
+import { Category, Collection, Product, BlogPost, SiteSettings, HomepageSection } from '@/types';
+
+const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  id: 1,
+  store_name: 'Burble',
+  store_name_ar: 'بيربل',
+  tagline: 'Flowers make moments special',
+  tagline_ar: 'الزهور تضفي سحراً على أجمل اللحظات',
+  whatsapp_number: '97400000000',
+  admin_email: 'admin@burbleflowers.com',
+  currency_symbol: 'QAR',
+  currency_symbol_ar: 'ر.ق',
+  announcement_text: 'Fresh Flowers Sourced Daily • Same-Day Delivery • Premium Quality • Beautifully Wrapped',
+  announcement_text_ar: 'زهور نضرة يتم استيرادها يومياً • توصيل في نفس اليوم • جودة فاخرة • تغليف راقٍ ومميز',
+  announcement_enabled: true,
+  free_shipping_threshold: 300,
+  flat_shipping_fee: 25,
+  updated_at: new Date().toISOString(),
+};
 
 function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,17 +33,19 @@ export async function getSiteSettings(): Promise<SiteSettings> {
         .from('site_settings')
         .select('id, store_name, store_name_ar, tagline, tagline_ar, whatsapp_number, admin_email, currency_symbol, currency_symbol_ar, announcement_text, announcement_text_ar, announcement_enabled, free_shipping_threshold, flat_shipping_fee, updated_at')
         .eq('id', 1)
-        .single();
+        .maybeSingle();
 
-      if (!error && data) {
+      if (error) {
+        console.error('[Queries] Error fetching site_settings from Supabase:', error.message);
+      } else if (data) {
         return data as SiteSettings;
       }
     } catch (err) {
-      console.error('[Queries] Error fetching site_settings from Supabase:', err);
+      console.error('[Queries] Exception fetching site_settings from Supabase:', err);
     }
   }
 
-  return DEMO_SITE_SETTINGS;
+  return DEFAULT_SITE_SETTINGS;
 }
 
 export async function getCategories(): Promise<Category[]> {
@@ -48,19 +59,26 @@ export async function getCategories(): Promise<Category[]> {
         .eq('active', true)
         .order('sort_order', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data as Category[];
+      if (error) {
+        console.error('[Queries] Error fetching categories from Supabase:', error.message);
+        return [];
       }
+
+      return (data || []) as Category[];
     } catch (err) {
-      console.error('[Queries] Error fetching categories:', err);
+      console.error('[Queries] Exception fetching categories:', err);
+      return [];
     }
   }
 
-  return DEMO_CATEGORIES;
+  return [];
 }
 
 export async function getProducts(options?: {
   categorySlug?: string;
+  occasionSlug?: string;
+  flowerSlug?: string;
+  collectionSlug?: string;
   isFeatured?: boolean;
   isNewArrival?: boolean;
   limit?: number;
@@ -71,7 +89,7 @@ export async function getProducts(options?: {
       const supabase = createPublicClient();
       let query = supabase
         .from('products')
-        .select('id, name, name_ar, slug, description, description_ar, short_description, short_description_ar, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, arabic_translation_source, created_at, updated_at')
+        .select('id, name, name_ar, slug, description, description_ar, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, arabic_translation_source, created_at, updated_at')
         .eq('active', true);
 
       if (options?.categorySlug) {
@@ -79,9 +97,37 @@ export async function getProducts(options?: {
           .from('categories')
           .select('id')
           .eq('slug', options.categorySlug)
-          .single();
+          .maybeSingle();
+
         if (cat?.id) {
           query = query.eq('category_id', cat.id);
+        } else {
+          return [];
+        }
+      }
+
+      const collectionSlug = options?.occasionSlug || options?.flowerSlug || options?.collectionSlug;
+      if (collectionSlug) {
+        const { data: col } = await supabase
+          .from('collections')
+          .select('id')
+          .eq('slug', collectionSlug)
+          .maybeSingle();
+
+        if (col?.id) {
+          const { data: items } = await supabase
+            .from('collection_items')
+            .select('product_id')
+            .eq('collection_id', col.id);
+
+          const productIds = (items || []).map((it) => it.product_id).filter(Boolean);
+          if (productIds.length > 0) {
+            query = query.in('id', productIds);
+          } else {
+            return [];
+          }
+        } else {
+          return [];
         }
       }
 
@@ -91,25 +137,19 @@ export async function getProducts(options?: {
 
       const { data, error } = await query.order('sort_order', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data as Product[];
+      if (error) {
+        console.error('[Queries] Error fetching products from Supabase:', error.message);
+        return [];
       }
+
+      return (data || []) as Product[];
     } catch (err) {
-      console.error('[Queries] Error fetching products:', err);
+      console.error('[Queries] Exception fetching products:', err);
+      return [];
     }
   }
 
-  let filtered = [...DEMO_PRODUCTS];
-  if (options?.categorySlug) {
-    const cat = DEMO_CATEGORIES.find((c) => c.slug === options.categorySlug);
-    if (cat) {
-      filtered = filtered.filter((p) => p.category_id === cat.id);
-    }
-  }
-  if (options?.isFeatured) filtered = filtered.filter((p) => p.is_featured);
-  if (options?.isNewArrival) filtered = filtered.filter((p) => p.is_new_arrival);
-  if (options?.limit) filtered = filtered.slice(0, options.limit);
-  return filtered;
+  return [];
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -119,48 +159,100 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, name_ar, slug, description, description_ar, short_description, short_description_ar, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, arabic_translation_source, created_at, updated_at')
+        .select('id, name, name_ar, slug, description, description_ar, price, compare_at_price, category_id, is_featured, is_new_arrival, stock_status, active, main_image_url, hover_image_url, sort_order, arabic_translation_source, created_at, updated_at')
         .eq('slug', slug)
         .eq('active', true)
-        .single();
+        .maybeSingle();
 
-      if (!error && data) {
-        return data as Product;
+      if (error) {
+        console.error('[Queries] Error fetching product by slug from Supabase:', error.message);
+        return null;
       }
+
+      if (!data) return null;
+
+      // Attach category if present
+      if (data.category_id) {
+        const { data: cat } = await supabase
+          .from('categories')
+          .select('id, name, name_ar, slug, description, description_ar, image_url, sort_order, active, created_at')
+          .eq('id', data.category_id)
+          .maybeSingle();
+        return {
+          ...data,
+          category: cat || null,
+        } as Product;
+      }
+
+      return data as Product;
     } catch (err) {
-      console.error('[Queries] Error fetching product by slug:', err);
+      console.error('[Queries] Exception fetching product by slug:', err);
+      return null;
     }
   }
 
-  return DEMO_PRODUCTS.find((p) => p.slug === slug) || null;
+  return null;
 }
 
-export async function getCollections(type: 'occasion' | 'flower' | 'collection'): Promise<Collection[]> {
+export async function getCollections(type?: 'occasion' | 'flower' | 'collection'): Promise<Collection[]> {
+  'use cache';
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createPublicClient();
+      let query = supabase
+        .from('collections')
+        .select('id, title, title_ar, slug, subtitle, subtitle_ar, image_url, type, sort_order, active')
+        .eq('active', true);
+
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      const { data, error } = await query.order('sort_order', { ascending: true });
+
+      if (error) {
+        console.error(`[Queries] Error fetching collections from Supabase:`, error.message);
+        return [];
+      }
+
+      return (data || []) as Collection[];
+    } catch (err) {
+      console.error(`[Queries] Exception fetching collections:`, err);
+      return [];
+    }
+  }
+
+  return [];
+}
+
+export async function getCollectionBySlug(slug: string): Promise<Collection | null> {
   'use cache';
   if (isSupabaseConfigured()) {
     try {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from('collections')
-        .select('id, title, title_ar, slug, subtitle, subtitle_ar, image_url, type, sort_order, active, created_at')
-        .eq('type', type)
+        .select('id, title, title_ar, slug, subtitle, subtitle_ar, image_url, type, sort_order, active')
+        .eq('slug', slug)
         .eq('active', true)
-        .order('sort_order', { ascending: true });
+        .maybeSingle();
 
-      if (!error && data && data.length > 0) {
-        return data as Collection[];
+      if (error) {
+        console.error(`[Queries] Error fetching collection by slug from Supabase:`, error.message);
+        return null;
       }
+
+      return data as Collection | null;
     } catch (err) {
-      console.error('[Queries] Error fetching collections:', err);
+      console.error(`[Queries] Exception fetching collection by slug:`, err);
+      return null;
     }
   }
 
-  if (type === 'occasion') return DEMO_OCCASIONS;
-  if (type === 'flower') return DEMO_FLOWERS;
-  return DEMO_COLLECTIONS;
+  return null;
 }
 
-export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
+export async function getBlogPosts(limit = 20): Promise<BlogPost[]> {
   'use cache';
   if (isSupabaseConfigured()) {
     try {
@@ -172,33 +264,121 @@ export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
         .order('published_at', { ascending: false })
         .limit(limit);
 
-      if (!error && data && data.length > 0) {
-        return data as BlogPost[];
+      if (error) {
+        console.error('[Queries] Error fetching blog posts from Supabase:', error.message);
+        return [];
       }
+
+      return (data || []) as BlogPost[];
     } catch (err) {
-      console.error('[Queries] Error fetching blog posts:', err);
+      console.error('[Queries] Exception fetching blog posts:', err);
+      return [];
     }
   }
 
-  return DEMO_BLOG_POSTS.slice(0, limit);
+  return [];
 }
 
-export async function getHomepageSections() {
+export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   'use cache';
   if (isSupabaseConfigured()) {
     try {
       const supabase = createPublicClient();
       const { data, error } = await supabase
-        .from('homepage_sections')
-        .select('section_key, title, title_ar, subtitle, subtitle_ar, is_visible, sort_order, content_json, updated_at')
-        .eq('is_visible', true)
-        .order('sort_order', { ascending: true });
+        .from('blog_posts')
+        .select('id, title, title_ar, slug, excerpt, excerpt_ar, content, content_ar, cover_image, author, author_ar, is_published, published_at, created_at')
+        .eq('slug', slug)
+        .eq('is_published', true)
+        .maybeSingle();
 
-      if (!error && data && data.length > 0) {
-        return data;
+      if (error) {
+        console.error('[Queries] Error fetching blog post by slug from Supabase:', error.message);
+        return null;
       }
+
+      return data as BlogPost | null;
     } catch (err) {
-      console.error('[Queries] Error fetching homepage_sections:', err);
+      console.error('[Queries] Exception fetching blog post by slug:', err);
+      return null;
+    }
+  }
+
+  return null;
+}
+
+export async function getHomepageSections(): Promise<HomepageSection[]> {
+  'use cache';
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createPublicClient();
+      const [sectionsRes, mediaRes] = await Promise.all([
+        supabase
+          .from('homepage_sections')
+          .select('id, section_key, title, title_ar, subtitle, subtitle_ar, is_visible, sort_order, content_json, updated_at')
+          .eq('is_visible', true)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('media_assets')
+          .select('public_id, url'),
+      ]);
+
+      if (sectionsRes.error) {
+        console.error('[Queries] Error fetching homepage_sections from Supabase:', sectionsRes.error.message);
+        return [];
+      }
+
+      const mediaMap: Record<string, string> = {};
+      (mediaRes.data || []).forEach((m) => {
+        if (m.public_id && m.url) {
+          mediaMap[m.public_id] = m.url;
+        }
+      });
+
+      const sections = (sectionsRes.data || []).map((sec) => {
+        const content = sec.content_json || {};
+        if (sec.section_key === 'hero_banner') {
+          return {
+            ...sec,
+            content_json: {
+              ...content,
+              desktop_image: content.desktop_image || mediaMap['burble/hero_desktop'] || '',
+              mobile_image: content.mobile_image || mediaMap['burble/hero_mobile'] || content.desktop_image || mediaMap['burble/hero_desktop'] || '',
+            },
+          };
+        }
+        if (sec.section_key === 'delivery_banner') {
+          return {
+            ...sec,
+            content_json: {
+              ...content,
+              banner_image: content.banner_image || mediaMap['burble/delivery_banner'] || '',
+            },
+          };
+        }
+        return sec;
+      });
+
+      if (!sections.some((s) => s.section_key === 'delivery_banner') && mediaMap['burble/delivery_banner']) {
+        sections.push({
+          id: 'def-delivery-banner',
+          section_key: 'delivery_banner',
+          title: 'Same-Day Delivery Banner',
+          title_ar: 'بانر التوصيل السريع في نفس اليوم',
+          subtitle: null,
+          subtitle_ar: null,
+          is_visible: true,
+          sort_order: 14,
+          content_json: {
+            banner_image: mediaMap['burble/delivery_banner'],
+          },
+          updated_at: new Date().toISOString(),
+        });
+      }
+
+      return sections as HomepageSection[];
+    } catch (err) {
+      console.error('[Queries] Exception fetching homepage_sections:', err);
+      return [];
     }
   }
 

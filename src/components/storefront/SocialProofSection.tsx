@@ -3,98 +3,115 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Star, Quote, CheckCircle2 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
+import { Product } from '@/types';
 
-export function SocialProofSection() {
+interface SocialProofSectionProps {
+  products?: Product[];
+}
+
+export function SocialProofSection({ products = [] }: SocialProofSectionProps) {
   const { t, isRtl, locale } = useLocale();
 
-  const moments = [
+  const reviews = [
     {
       id: 1,
-      image: '/demo-media/hero_desktop.jpg',
       name: locale === 'ar' ? 'أمينة الكواري' : 'Amina K.',
-      comment: locale === 'ar' ? 'الورد كان في قمة النضارة والتنسيق خيالي!' : 'The roses were breathtakingly fresh!',
+      location: locale === 'ar' ? 'الخليج الغربي، الدوحة' : 'West Bay, Doha',
+      comment: locale === 'ar' ? 'الورد كان في قمة النضارة والتنسيق خيالي! وصل في نفس اليوم في الموعد المحدد.' : 'The roses were breathtakingly fresh! Delivered same-day right on schedule.',
+      rating: 5,
     },
     {
       id: 2,
-      image: '/demo-media/product_blush_bouquet.jpg',
       name: locale === 'ar' ? 'سارة المري' : 'Sara M.',
-      comment: locale === 'ar' ? 'التوصيل في نفس اليوم كان منقذاً لذكرى زواجنا.' : 'Same-day delivery saved our anniversary.',
+      location: locale === 'ar' ? 'اللؤلؤة، قطر' : 'The Pearl, Qatar',
+      comment: locale === 'ar' ? 'التوصيل السريع والاهتمام بأدق التفاصيل جعل ذكرى زواجنا استثنائية.' : 'Express delivery and unmatched attention to detail made our anniversary so special.',
+      rating: 5,
     },
     {
       id: 3,
-      image: '/demo-media/product_pastel_bouquet.jpg',
       name: locale === 'ar' ? 'نورة الهاجري' : 'Noora H.',
-      comment: locale === 'ar' ? 'تغليف راقٍ جداً ورائحة الزهور فواحة.' : 'Elegant wrapping and gorgeous scent.',
-    },
-    {
-      id: 4,
-      image: '/demo-media/hero_slide_two.jpg',
-      name: locale === 'ar' ? 'فاطمة الزهراء' : 'Fatima Z.',
-      comment: locale === 'ar' ? 'أفضل متجر زهور في الدوحة بلا منازع.' : 'Best florist in Doha by far.',
-    },
-    {
-      id: 5,
-      image: '/demo-media/product_red_roses.jpg',
-      name: locale === 'ar' ? 'ريم القحطاني' : 'Reem Q.',
-      comment: locale === 'ar' ? 'باقة مذهلة وخدمة ممتازة وتوصيل سريع!' : 'Flawless bouquet and service!',
+      location: locale === 'ar' ? 'لوسيل' : 'Lusail',
+      comment: locale === 'ar' ? 'تغليف راقٍ جداً ورائحة الزهور فواحة وطبيعية. متجري المفضل دائماً.' : 'Exquisite luxury packaging and long-lasting fresh scent. My go-to florist in Qatar.',
+      rating: 5,
     },
   ];
 
   return (
     <section className="py-12 bg-cream-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
           {/* Left Text Card */}
-          <div className="lg:col-span-4 bg-plum-100/60 rounded-3xl p-8 border border-plum-200/50 flex flex-col justify-between min-h-[320px]">
+          <div className="lg:col-span-4 bg-plum-900 text-white rounded-3xl p-8 border border-plum-800 flex flex-col justify-between shadow-md">
             <div>
-              <div className="flex items-center space-x-1 rtl:space-x-reverse text-amber-500 mb-3">
+              <div className="flex items-center space-x-1 rtl:space-x-reverse text-amber-400 mb-3">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-current" />
                 ))}
-                <span className="text-xs font-bold text-plum-900 ms-1.5">{t.sections.socialProofRating}</span>
+                <span className="text-xs font-bold text-white ms-1.5">{t.sections.socialProofRating}</span>
               </div>
 
-              <h2 className="font-serif text-3xl font-bold text-plum-900 leading-tight whitespace-pre-line">
+              <h2 className="font-serif text-3xl font-bold text-white leading-tight whitespace-pre-line">
                 {t.sections.socialProofTitle}
               </h2>
-              <p className="text-xs text-plum-800/80 font-normal mt-3 mb-6 leading-relaxed">
+              <p className="text-xs text-plum-100 font-light mt-3 mb-6 leading-relaxed">
                 {t.sections.socialProofSubtitle}
               </p>
             </div>
 
             <Link
               href="/about"
-              className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-plum-900 hover:bg-plum-800 text-white text-xs font-semibold px-5 py-3 rounded-full w-fit shadow-xs transition-colors"
+              className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-white text-plum-900 hover:bg-blush-100 text-xs font-semibold px-5 py-3 rounded-full w-fit shadow-xs transition-colors"
             >
               <span>{t.sections.viewCustomerStories}</span>
               <ArrowRight className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
             </Link>
           </div>
 
-          {/* Right Image Strip */}
-          <div className="lg:col-span-8 overflow-hidden">
-            <div className="flex space-x-4 rtl:space-x-reverse overflow-x-auto no-scrollbar pb-2">
-              {moments.map((m) => (
-                <div
-                  key={m.id}
-                  className="relative w-44 sm:w-52 h-64 rounded-2xl overflow-hidden shrink-0 group border border-ink-100 shadow-xs"
-                >
-                  <Image
-                    src={m.image}
-                    alt={m.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-plum-950/80 via-transparent to-transparent opacity-90 p-4 flex flex-col justify-end text-white">
-                    <p className="text-xs font-semibold">{m.name}</p>
-                    <p className="text-[11px] font-light text-plum-200 line-clamp-2 mt-0.5">"{m.comment}"</p>
+          {/* Right Customer Testimonial Cards Strip */}
+          <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {reviews.map((m, idx) => (
+              <div
+                key={m.id}
+                className="bg-white rounded-2xl p-6 border border-ink-100 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
+              >
+                <Quote className="w-8 h-8 text-plum-100 absolute top-4 end-4 pointer-events-none" />
+
+                <div>
+                  <div className="flex items-center space-x-1 rtl:space-x-reverse text-amber-500 mb-3">
+                    {[...Array(m.rating)].map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                    ))}
                   </div>
+                  <p className="text-xs text-ink-700 font-normal leading-relaxed italic">
+                    "{m.comment}"
+                  </p>
                 </div>
-              ))}
-            </div>
+
+                <div className="pt-4 mt-4 border-t border-ink-100/60 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs font-bold text-plum-900">{m.name}</p>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    </div>
+                    <p className="text-[10px] text-ink-400 font-medium">{m.location}</p>
+                  </div>
+
+                  {products[idx]?.main_image_url && (
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-cream-100 border border-ink-100 shrink-0">
+                      <Image
+                        src={products[idx].main_image_url}
+                        alt="Bouquet"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
         </div>

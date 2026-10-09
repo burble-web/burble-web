@@ -28,6 +28,11 @@ export interface SaveProductPayload {
 }
 
 export async function getAdminProductsAction(): Promise<{ success: boolean; data?: Product[]; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin authentication required.' };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase

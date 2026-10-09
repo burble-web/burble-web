@@ -125,6 +125,7 @@ export const en = {
     featured: 'Featured',
     addToCart: 'Add to Cart',
     addedToCart: 'Added to Cart!',
+    buyNow: 'Buy Now',
     orderWhatsApp: 'Order via WhatsApp Now',
     inStockReadyExpress: 'In Stock — Ready for Same-Day Express Delivery in Qatar',
     descriptionHeading: 'Description',
@@ -235,6 +236,10 @@ export const en = {
     orderSuccessSubtitle: 'Your floral order has been received and is being prepared with care.',
     orderNumberLabel: 'Order Reference',
     backToHome: 'Back to Homepage',
+    continueShopping: 'Continue Shopping',
+    continueToWhatsApp: 'Continue to WhatsApp',
+    whatsappSuccessNote: 'Your WhatsApp chat has opened. Send the pre-filled message to our florist to confirm delivery details.',
+    codSuccessNote: 'We have received your order. We will deliver your fresh blooms via Cash on Delivery across Qatar.',
     emptyCartError: 'Your cart is empty. Please add items before checking out.',
   },
 

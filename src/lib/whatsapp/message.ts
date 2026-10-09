@@ -1,20 +1,7 @@
 import { CartItem, CheckoutFormData, Locale } from '@/types';
 import { getLocalizedValue } from '@/lib/i18n/utils';
 
-/**
- * Formats a clean, human-readable WhatsApp order message (in English or Arabic) and returns a WhatsApp URL.
- */
-export function createWhatsAppOrderLink({
-  whatsappNumber,
-  orderNumber,
-  formData,
-  items,
-  subtotal,
-  shippingFee,
-  totalAmount,
-  currencySymbol = 'QAR',
-  locale = 'en',
-}: {
+export interface WhatsAppMessageParams {
   whatsappNumber: string;
   orderNumber: string;
   formData: CheckoutFormData;
@@ -24,75 +11,160 @@ export function createWhatsAppOrderLink({
   totalAmount: number;
   currencySymbol?: string;
   locale?: Locale;
-}): string {
-  const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '');
+  siteUrl?: string;
+}
 
-  if (locale === 'ar') {
-    const currSym = currencySymbol === 'QAR' ? 'ر.ق' : currencySymbol;
-    const itemsList = items
-      .map((item) => {
-        const name = getLocalizedValue({
-          locale: 'ar',
-          english: item.product.name,
-          arabic: item.product.name_ar,
-        });
-        return `• ${name} × ${item.quantity} (${(item.product.price * item.quantity).toFixed(2)} ${currSym})`;
-      })
-      .join('\n');
+/**
+ * Generates the clean, structured WhatsApp message following Burble's verified order schema.
+ * Visual organization:
+ * 1. Order heading
+ * 2. Product details (item name, category, unit price, quantity, line subtotal)
+ * 3. Shipping details
+ * 4. Grand total (in QAR)
+ * 5. Customer & delivery details
+ * 6. Product link(s)
+ * 7. Closing message
+ */
+export function generateWhatsAppMessage({
+  orderNumber,
+  formData,
+  items,
+  subtotal,
+  shippingFee,
+  totalAmount,
+  currencySymbol = 'QAR',
+  locale = 'en',
+  siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://burbleflowers.com',
+}: WhatsAppMessageParams): string {
+  const isAr = locale === 'ar';
+  const currSym = isAr ? (currencySymbol === 'QAR' ? 'ر.ق' : currencySymbol) : (currencySymbol || 'QAR');
 
-    const text = `🌸 *طلب شراء جديد - متجر زهور بيربل*
+  if (isAr) {
+    // 1. Order heading
+    let msg = `🌸 *طلب شراء جديد - متجر زهور بيربل*\n`;
+    msg += `*رقم الطلب المرجعي:* #${orderNumber}\n\n`;
 
-*رقم الطلب المرجعي:* #${orderNumber}
+    // 2. Product details
+    msg += `🛍️ *تفاصيل الباقات والمنتجات:*\n`;
+    items.forEach((item, idx) => {
+      const productName = getLocalizedValue({
+        locale: 'ar',
+        english: item.product.name,
+        arabic: item.product.name_ar,
+      });
+      const categoryName = getLocalizedValue({
+        locale: 'ar',
+        english: item.product.category?.name,
+        arabic: item.product.category?.name_ar,
+      });
+      const unitPrice = item.product.price.toFixed(2);
+      const lineTotal = (item.product.price * item.quantity).toFixed(2);
 
-*تفاصيل الباقات:*
-${itemsList}
+      msg += `${idx + 1}. *${productName}*\n`;
+      if (categoryName) {
+        msg += `   • الفئة: ${categoryName}\n`;
+      }
+      msg += `   • السعر: ${unitPrice} ${currSym} × ${item.quantity}\n`;
+      msg += `   • المجموع: ${lineTotal} ${currSym}\n`;
+    });
 
-------------------------------
-*المجموع الفرعي:* ${subtotal.toFixed(2)} ${currSym}
-*رسوم التوصيل:* ${shippingFee > 0 ? `${shippingFee.toFixed(2)} ${currSym}` : 'توصيل مجاني 🎉'}
-*المبلغ الإجمالي:* ${totalAmount.toFixed(2)} ${currSym}
+    // 3. Shipping details & 4. Grand total
+    msg += `\n📦 *تفاصيل الشحن والتوصيل:*\n`;
+    msg += `• المجموع الفرعي: ${subtotal.toFixed(2)} ${currSym}\n`;
+    msg += `• رسوم التوصيل: ${shippingFee > 0 ? `${shippingFee.toFixed(2)} ${currSym}` : 'توصيل مجاني 🎉'}\n`;
+    msg += `• *المبلغ الإجمالي:* ${totalAmount.toFixed(2)} ${currSym}\n\n`;
 
-------------------------------
-*بيانات العميل والتوصيل:*
-• الاسم: ${formData.customer_name}
-• رقم الهاتف: ${formData.customer_phone}
-• البريد الإلكتروني: ${formData.customer_email}
-• العنوان: ${formData.delivery_address}، ${formData.city}${formData.pincode ? ` (${formData.pincode})` : ''}
-${formData.delivery_notes ? `• ملاحظات التوصيل / كارت الإهداء: ${formData.delivery_notes}` : ''}
+    // 5. Customer details
+    msg += `📍 *بيانات العميل والتوصيل:*\n`;
+    msg += `• الاسم: ${formData.customer_name}\n`;
+    msg += `• رقم الهاتف: ${formData.customer_phone}\n`;
+    msg += `• البريد الإلكتروني: ${formData.customer_email}\n`;
+    msg += `• العنوان: ${formData.delivery_address}، ${formData.city}${formData.district ? `، ${formData.district}` : ''}${formData.pincode ? ` (${formData.pincode})` : ''}\n`;
+    if (formData.delivery_notes) {
+      msg += `• ملاحظات التوصيل / كارت الإهداء: ${formData.delivery_notes}\n`;
+    }
 
-شكراً لكم! أود تأكيد هذا الطلب ومتابعته عبر الواتساب.`;
+    // 6. Product links
+    msg += `\n🔗 *روابط المنتجات:*\n`;
+    items.forEach((item) => {
+      const productName = getLocalizedValue({
+        locale: 'ar',
+        english: item.product.name,
+        arabic: item.product.name_ar,
+      });
+      msg += `• ${productName}: ${siteUrl}/products/${item.product.slug}\n`;
+    });
 
-    const encodedText = encodeURIComponent(text);
-    return `https://wa.me/${cleanNumber}?text=${encodedText}`;
+    // 7. Closing message
+    msg += `\n✨ _شكراً لاختياركم بيربل! يرجى إرسال هذه الرسالة لفريقنا لتأكيد موعد وتفاصيل التوصيل._`;
+
+    return msg;
   }
 
   // English message
-  const itemsList = items
-    .map((item) => `• ${item.product.name} × ${item.quantity} (${currencySymbol} ${(item.product.price * item.quantity).toFixed(2)})`)
-    .join('\n');
+  // 1. Order heading
+  let msg = `🌸 *New Order Request - Burble Flowers*\n`;
+  msg += `*Order Reference:* #${orderNumber}\n\n`;
 
-  const text = `🌸 *New Order Request - Burble Flowers*
+  // 2. Product details
+  msg += `🛍️ *Order Items:*\n`;
+  items.forEach((item, idx) => {
+    const unitPrice = item.product.price.toFixed(2);
+    const lineTotal = (item.product.price * item.quantity).toFixed(2);
+    const categoryName = item.product.category?.name;
 
-*Order Ref:* #${orderNumber}
+    msg += `${idx + 1}. *${item.product.name}*\n`;
+    if (categoryName) {
+      msg += `   • Category: ${categoryName}\n`;
+    }
+    msg += `   • Price: ${currSym} ${unitPrice} × ${item.quantity}\n`;
+    msg += `   • Line Total: ${currSym} ${lineTotal}\n`;
+  });
 
-*Items:*
-${itemsList}
+  // 3. Shipping details & 4. Grand total
+  msg += `\n📦 *Shipping & Delivery:*\n`;
+  msg += `• Subtotal: ${currSym} ${subtotal.toFixed(2)}\n`;
+  msg += `• Delivery Fee: ${shippingFee > 0 ? `${currSym} ${shippingFee.toFixed(2)}` : 'FREE'}\n`;
+  msg += `• *Grand Total:* ${currSym} ${totalAmount.toFixed(2)}\n\n`;
 
-------------------------------
-*Subtotal:* ${currencySymbol} ${subtotal.toFixed(2)}
-*Delivery:* ${shippingFee > 0 ? `${currencySymbol} ${shippingFee.toFixed(2)}` : 'FREE'}
-*Total Amount:* ${currencySymbol} ${totalAmount.toFixed(2)}
+  // 5. Customer details
+  msg += `📍 *Customer & Delivery Details:*\n`;
+  msg += `• Name: ${formData.customer_name}\n`;
+  msg += `• Phone: ${formData.customer_phone}\n`;
+  msg += `• Email: ${formData.customer_email}\n`;
+  msg += `• Address: ${formData.delivery_address}, ${formData.city}${formData.district ? `, ${formData.district}` : ''}${formData.pincode ? ` (${formData.pincode})` : ''}\n`;
+  if (formData.delivery_notes) {
+    msg += `• Delivery Instructions / Note: ${formData.delivery_notes}\n`;
+  }
 
-------------------------------
-*Customer Details:*
-• Name: ${formData.customer_name}
-• Phone: ${formData.customer_phone}
-• Email: ${formData.customer_email}
-• Address: ${formData.delivery_address}, ${formData.city}${formData.pincode ? ` (${formData.pincode})` : ''}
-${formData.delivery_notes ? `• Delivery Note: ${formData.delivery_notes}` : ''}
+  // 6. Product links
+  msg += `\n🔗 *Product Links:*\n`;
+  items.forEach((item) => {
+    msg += `• ${item.product.name}: ${siteUrl}/products/${item.product.slug}\n`;
+  });
 
-Thank you! I would like to confirm this order via WhatsApp.`;
+  // 7. Closing message
+  msg += `\n✨ _Thank you for choosing Burble! Please send this message to our team to confirm delivery details._`;
 
-  const encodedText = encodeURIComponent(text);
+  return msg;
+}
+
+/**
+ * Encodes the structured message into a verified WhatsApp destination URL.
+ */
+export function createWhatsAppOrderLink(params: WhatsAppMessageParams): string {
+  const cleanNumber = params.whatsappNumber.replace(/[^0-9]/g, '');
+  const message = generateWhatsAppMessage(params);
+  const encodedText = encodeURIComponent(message);
   return `https://wa.me/${cleanNumber}?text=${encodedText}`;
+}
+
+/**
+ * Opens WhatsApp composer in a new window/tab on client devices.
+ */
+export function openWhatsApp(params: WhatsAppMessageParams): void {
+  const url = createWhatsAppOrderLink(params);
+  if (typeof window !== 'undefined') {
+    window.open(url, '_blank');
+  }
 }

@@ -78,6 +78,10 @@ export async function saveCmsConfigurationAction(payload: CmsSavePayload) {
         subtitle_ar: finalHeroSubtitleAr,
         is_visible: true,
         content_json: {
+          heading: payload.heroTitle,
+          heading_ar: finalHeroTitleAr,
+          subheading: payload.heroSubtitle,
+          subheading_ar: finalHeroSubtitleAr,
           cta_text: payload.heroCtaText,
           cta_text_ar: finalHeroCtaAr,
           cta_link: payload.heroCtaLink,
@@ -116,6 +120,40 @@ export async function saveCmsConfigurationAction(payload: CmsSavePayload) {
   } catch (err: any) {
     console.error('[CMS Action Error]', err);
     return { success: false, error: err?.message || 'Failed to save CMS configuration.' };
+  }
+}
+
+export async function getAdminCmsConfigurationAction() {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    return {
+      success: false,
+      error: 'Unauthorized: Admin authentication required.',
+      settings: null,
+      sections: [],
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const [settingsRes, sectionsRes] = await Promise.all([
+      supabase.from('site_settings').select('*').eq('id', 1).maybeSingle(),
+      supabase.from('homepage_sections').select('*').order('sort_order', { ascending: true }),
+    ]);
+
+    return {
+      success: true,
+      settings: settingsRes.data || null,
+      sections: sectionsRes.data || [],
+    };
+  } catch (err: any) {
+    console.error('[Get CMS Config Action Error]', err);
+    return {
+      success: false,
+      error: err?.message || 'Failed to fetch CMS configuration.',
+      settings: null,
+      sections: [],
+    };
   }
 }
 
