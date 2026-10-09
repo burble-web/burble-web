@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { BlogPost } from '@/types';
-import { DEMO_BLOG_POSTS } from '@/lib/data/storefront';
 import {
   getAdminBlogPostsAction,
   saveBlogPostAction,
@@ -28,10 +27,10 @@ export default function AdminBlogPage() {
   const loadPosts = async () => {
     setLoading(true);
     const res = await getAdminBlogPostsAction();
-    if (res.success && res.data && res.data.length > 0) {
+    if (res.success && res.data) {
       setPosts(res.data);
     } else {
-      setPosts(DEMO_BLOG_POSTS);
+      setPosts([]);
     }
     setLoading(false);
   };
@@ -134,7 +133,7 @@ export default function AdminBlogPage() {
               excerpt_ar: '',
               content: '',
               content_ar: '',
-              cover_image: '/demo-media/product_blush_bouquet.jpg',
+              cover_image: '',
               author: 'Burble Florist',
               is_published: true,
             });
@@ -159,93 +158,99 @@ export default function AdminBlogPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-6 border border-ink-100 shadow-xs">
+      <div className="bg-white rounded-3xl p-6 border border-ink-200/80 shadow-xs">
         {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center text-ink-400">
-            <Loader2 className="w-6 h-6 animate-spin mb-2" />
+          <div className="py-12 flex flex-col items-center justify-center text-ink-500">
+            <Loader2 className="w-6 h-6 animate-spin mb-2 text-plum-800" />
             <span className="text-xs font-medium">Loading blog posts...</span>
           </div>
         ) : (
-          <table className="w-full text-start border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4">Article (EN / AR)</th>
-                <th className="py-3 px-4">Author</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100">
-              {posts.map((post) => (
-                <tr key={post.id} className="hover:bg-cream-50 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-plum-900">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
-                        <Image
-                          src={post.cover_image || '/demo-media/product_blush_bouquet.jpg'}
-                          alt={post.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p>{post.title}</p>
-                        {post.title_ar && (
-                          <p className="text-[11px] text-plum-700 font-arabic font-normal">{post.title_ar}</p>
-                        )}
-                        <p className="text-[10px] text-ink-400 font-mono">/{post.slug}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 font-semibold text-plum-800">{post.author}</td>
-                  <td className="py-3.5 px-4">
-                    {post.is_published ? (
-                      <span className="text-emerald-700 flex items-center gap-1 font-semibold">
-                        <CheckCircle className="w-4 h-4" />
-                        <span>Published</span>
-                      </span>
-                    ) : (
-                      <span className="text-amber-700 flex items-center gap-1 font-semibold">
-                        <XCircle className="w-4 h-4" />
-                        <span>Draft</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 text-end space-x-1 rtl:space-x-reverse">
-                    <button
-                      onClick={() => {
-                        setEditingPost({
-                          id: post.id,
-                          title: post.title,
-                          title_ar: post.title_ar || '',
-                          slug: post.slug,
-                          excerpt: post.excerpt,
-                          excerpt_ar: post.excerpt_ar || '',
-                          content: post.content,
-                          content_ar: post.content_ar || '',
-                          cover_image: post.cover_image,
-                          author: post.author,
-                          is_published: post.is_published,
-                        });
-                        setModalOpen(true);
-                      }}
-                      className="p-1.5 text-plum-800 hover:bg-plum-100 rounded-lg"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      className="p-1.5 text-rose-700 hover:bg-rose-100 rounded-lg"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+          <div className="overflow-x-auto rounded-xl border border-ink-100">
+            <table className="w-full text-start border-collapse text-xs">
+              <thead>
+                <tr className="bg-cream-100/90 border-b border-ink-200 text-ink-800 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3.5 px-4">Article (EN / AR)</th>
+                  <th className="py-3.5 px-4">Author</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-end">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {posts.map((post) => (
+                  <tr key={post.id} className="hover:bg-cream-50/80 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-plum-950">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-12 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-200 flex items-center justify-center">
+                          {post.cover_image ? (
+                            <Image
+                              src={post.cover_image}
+                              alt={post.title}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="w-4 h-4 text-ink-400" />
+                          )}
+                        </div>
+                        <div>
+                          <p>{post.title}</p>
+                          {post.title_ar && (
+                            <p className="text-[11px] text-plum-800 font-arabic font-semibold">{post.title_ar}</p>
+                          )}
+                          <p className="text-[10px] text-ink-500 font-mono">/{post.slug}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 font-semibold text-plum-900">{post.author}</td>
+                    <td className="py-3.5 px-4">
+                      {post.is_published ? (
+                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-950 border border-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Published</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 border border-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                          <XCircle className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Draft</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-end space-x-1 rtl:space-x-reverse">
+                      <button
+                        onClick={() => {
+                          setEditingPost({
+                            id: post.id,
+                            title: post.title,
+                            title_ar: post.title_ar || '',
+                            slug: post.slug,
+                            excerpt: post.excerpt,
+                            excerpt_ar: post.excerpt_ar || '',
+                            content: post.content,
+                            content_ar: post.content_ar || '',
+                            cover_image: post.cover_image,
+                            author: post.author,
+                            is_published: post.is_published,
+                          });
+                          setModalOpen(true);
+                        }}
+                        className="p-2 text-plum-900 hover:bg-plum-100 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="p-2 text-rose-800 hover:bg-rose-100 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

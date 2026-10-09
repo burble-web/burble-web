@@ -163,6 +163,14 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <ArrowRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
                 </Link>
 
+                <Link
+                  href="/cart"
+                  onClick={onClose}
+                  className="w-full py-2.5 bg-cream-100 hover:bg-cream-200 text-plum-900 font-semibold text-xs rounded-xl transition-colors border border-ink-200 flex items-center justify-center"
+                >
+                  <span>{t.cart.title}</span>
+                </Link>
+
                 <button
                   onClick={clearCart}
                   className="w-full py-2 text-xs text-ink-500 hover:text-rose-600 transition-colors text-center"

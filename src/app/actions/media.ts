@@ -25,6 +25,11 @@ export async function registerMediaAssetAction(asset: {
   folder?: string;
   alt_text?: string;
 }): Promise<{ success: boolean; asset?: MediaAssetRecord; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin authentication required.' };
+  }
+
   try {
     const supabase = await createClient();
     const { data: mediaRecord, error: dbError } = await supabase

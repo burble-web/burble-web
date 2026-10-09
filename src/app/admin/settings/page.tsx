@@ -3,11 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Check, Loader2 } from 'lucide-react';
 import { SiteSettings } from '@/types';
-import { DEMO_SITE_SETTINGS } from '@/lib/data/storefront';
 import { getAdminSettingsAction, saveSettingsAction, SaveSettingsPayload } from '@/app/actions/settings';
 
+const INITIAL_SETTINGS: SiteSettings = {
+  id: 1,
+  store_name: '',
+  store_name_ar: '',
+  tagline: '',
+  tagline_ar: '',
+  whatsapp_number: '',
+  admin_email: '',
+  currency_symbol: 'QAR',
+  currency_symbol_ar: 'ر.ق',
+  announcement_text: '',
+  announcement_text_ar: '',
+  announcement_enabled: true,
+  free_shipping_threshold: 300,
+  flat_shipping_fee: 25,
+  updated_at: new Date().toISOString(),
+};
+
 export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState<SiteSettings>(DEMO_SITE_SETTINGS);
+  const [settings, setSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);

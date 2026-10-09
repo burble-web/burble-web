@@ -1,9 +1,16 @@
 import { z } from 'zod';
 
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const checkoutItemSchema = z.object({
+  product_id: z.string().regex(UUID_REGEX, 'Invalid product identifier format (must be a valid UUID).'),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1').max(100, 'Maximum quantity is 100'),
+});
+
 export const checkoutSchema = z.object({
   customer_name: z.string().min(2, 'Name must be at least 2 characters'),
   customer_email: z.string().email('Please enter a valid email address'),
-  customer_phone: z.string().min(8, 'Please enter a valid contact phone number'),
+  customer_phone: z.string().min(6, 'Please enter a valid contact phone number'),
   delivery_address: z.string().min(5, 'Delivery address is required'),
   city: z.string().min(2, 'City is required').default('Doha'),
   district: z.string().optional(),

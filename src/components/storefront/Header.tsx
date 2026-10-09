@@ -13,7 +13,7 @@ export function Header() {
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { totalItemsCount, wishlist } = useCart();
-  const { t, isRtl } = useLocale();
+  const { t, isRtl, locale } = useLocale();
 
   return (
     <>
@@ -53,16 +53,16 @@ export function Header() {
                 </Link>
                 <div className="absolute top-full start-0 hidden group-hover:block w-48 bg-white shadow-xl rounded-xl p-2 border border-ink-100 z-50">
                   <Link href="/products?occasion=birthday" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'أعياد الميلاد' : 'Birthday'}
+                    {locale === 'ar' ? 'أعياد الميلاد' : 'Birthday'}
                   </Link>
                   <Link href="/products?occasion=anniversary" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'الذكرى السنوية' : 'Anniversary'}
+                    {locale === 'ar' ? 'الذكرى السنوية' : 'Anniversary'}
                   </Link>
                   <Link href="/products?occasion=graduation" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'التخرج والنجاح' : 'Graduation'}
+                    {locale === 'ar' ? 'التخرج والنجاح' : 'Graduation'}
                   </Link>
                   <Link href="/products?occasion=love-romance" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'حب ورومانسية' : 'Love & Romance'}
+                    {locale === 'ar' ? 'حب ورومانسية' : 'Love & Romance'}
                   </Link>
                 </div>
               </div>
@@ -74,16 +74,16 @@ export function Header() {
                 </Link>
                 <div className="absolute top-full start-0 hidden group-hover:block w-48 bg-white shadow-xl rounded-xl p-2 border border-ink-100 z-50">
                   <Link href="/products?flower=roses" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'الجوري والورد' : 'Roses'}
+                    {locale === 'ar' ? 'الجوري والورد' : 'Roses'}
                   </Link>
                   <Link href="/products?flower=lilies" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'الزنبق (الليلي)' : 'Lilies'}
+                    {locale === 'ar' ? 'الزنبق (الليلي)' : 'Lilies'}
                   </Link>
                   <Link href="/products?flower=peonies" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'الفاونيا (البيوني)' : 'Peonies'}
+                    {locale === 'ar' ? 'الفاونيا (البيوني)' : 'Peonies'}
                   </Link>
                   <Link href="/products?flower=tulips" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
-                    {t.sections.newArrivalsTitle.includes('وصل') ? 'التوليب' : 'Tulips'}
+                    {locale === 'ar' ? 'التوليب' : 'Tulips'}
                   </Link>
                 </div>
               </div>

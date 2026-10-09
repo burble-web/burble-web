@@ -180,7 +180,12 @@ export default async function ProductDetailPage({
             </div>
 
             {/* Interactive Client Controls (Add to Cart / WhatsApp order button) */}
-            <ProductDetailClient product={product} whatsappNumber={settings.whatsapp_number} />
+            <ProductDetailClient
+              product={product}
+              whatsappNumber={settings.whatsapp_number}
+              freeShippingThreshold={settings.free_shipping_threshold}
+              flatShippingFee={settings.flat_shipping_fee}
+            />
 
           </div>
 

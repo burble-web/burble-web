@@ -21,6 +21,11 @@ export interface SaveSettingsPayload {
 }
 
 export async function getAdminSettingsAction(): Promise<{ success: boolean; data?: SiteSettings; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin authentication required.' };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase

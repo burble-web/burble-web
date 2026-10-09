@@ -18,6 +18,11 @@ export interface SaveCategoryPayload {
 }
 
 export async function getAdminCategoriesAction(): Promise<{ success: boolean; data?: Category[]; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin authentication required.' };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase

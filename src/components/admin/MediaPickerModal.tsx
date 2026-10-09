@@ -12,18 +12,9 @@ interface MediaPickerModalProps {
   title?: string;
 }
 
-const INITIAL_MEDIA = [
-  { id: '1', name: 'hero_desktop.jpg', url: '/demo-media/hero_desktop.jpg' },
-  { id: '2', name: 'hero_mobile_v2.jpg', url: '/demo-media/hero_mobile_v2.jpg' },
-  { id: '3', name: 'product_blush_bouquet.jpg', url: '/demo-media/product_blush_bouquet.jpg' },
-  { id: '4', name: 'product_red_roses.jpg', url: '/demo-media/product_red_roses.jpg' },
-  { id: '5', name: 'product_pastel_bouquet.jpg', url: '/demo-media/product_pastel_bouquet.jpg' },
-  { id: '6', name: 'premium_banner.jpg', url: '/demo-media/premium_banner.jpg' },
-  { id: '7', name: 'delivery_banner.jpg', url: '/demo-media/delivery_banner.jpg' },
-];
-
 export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Image from Media Library' }: MediaPickerModalProps) {
-  const [mediaList, setMediaList] = useState<{ id: string; name: string; url: string }[]>(INITIAL_MEDIA);
+  const [mediaList, setMediaList] = useState<{ id: string; name: string; url: string }[]>([]);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -31,6 +22,7 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
   useEffect(() => {
     if (!isOpen) return;
     async function loadAssets() {
+      setLoading(true);
       const dbAssets = await getMediaAssetsAction();
       if (dbAssets && dbAssets.length > 0) {
         const formatted = dbAssets.map((a: MediaAssetRecord) => ({
@@ -39,7 +31,10 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
           url: a.url,
         }));
         setMediaList(formatted);
+      } else {
+        setMediaList([]);
       }
+      setLoading(false);
     }
     loadAssets();
   }, [isOpen]);
@@ -111,39 +106,54 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
         )}
 
         {/* Media Grid */}
-        <div className="flex-1 overflow-y-auto py-4 grid grid-cols-3 sm:grid-cols-4 gap-3">
-          {mediaList.map((item) => {
-            const isSelected = selectedUrl === item.url;
-            return (
-              <div
-                key={item.id}
-                onClick={() => setSelectedUrl(item.url)}
-                className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all ${
-                  isSelected ? 'border-plum-800 ring-2 ring-plum-800/30 shadow-md' : 'border-ink-100 hover:border-plum-300'
-                }`}
-              >
-                <Image src={item.url} alt={item.name} fill className="object-cover" />
-                {isSelected && (
-                  <div className="absolute inset-0 bg-plum-950/30 flex items-center justify-center">
-                    <div className="w-7 h-7 rounded-full bg-plum-800 text-white flex items-center justify-center shadow-md">
-                      <Check className="w-4 h-4" />
-                    </div>
+        <div className="flex-1 overflow-y-auto py-4">
+          {loading ? (
+            <div className="py-12 text-center flex flex-col items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-plum-800 mb-2" />
+              <span className="text-xs text-ink-500 font-medium">Loading media library...</span>
+            </div>
+          ) : mediaList.length === 0 ? (
+            <div className="py-12 text-center border border-dashed border-ink-200 rounded-2xl">
+              <ImageIcon className="w-10 h-10 text-ink-400 mx-auto mb-2" />
+              <p className="text-xs font-bold text-plum-950">No media assets in library</p>
+              <p className="text-[11px] text-ink-600 mt-0.5 font-medium">Upload images above to add them to your Cloudinary storage.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {mediaList.map((item) => {
+                const isSelected = selectedUrl === item.url;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedUrl(item.url)}
+                    className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all ${
+                      isSelected ? 'border-plum-800 ring-2 ring-plum-800/30 shadow-md' : 'border-ink-200 hover:border-plum-400'
+                    }`}
+                  >
+                    <Image src={item.url} alt={item.name} fill className="object-cover" />
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-plum-950/30 flex items-center justify-center">
+                        <div className="w-7 h-7 rounded-full bg-plum-800 text-white flex items-center justify-center shadow-md">
+                          <Check className="w-4 h-4" />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="pt-4 border-t border-ink-100 flex items-center justify-between">
-          <span className="text-xs text-ink-500 truncate max-w-xs">
+          <span className="text-xs text-ink-600 font-medium truncate max-w-xs">
             {selectedUrl ? `Selected: ${selectedUrl.split('/').pop()}` : 'No image selected'}
           </span>
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-ink-200 text-ink-700 text-xs font-semibold hover:bg-cream-100"
+              className="px-4 py-2 rounded-xl border border-ink-200 text-ink-800 text-xs font-semibold hover:bg-cream-100"
             >
               Cancel
             </button>
