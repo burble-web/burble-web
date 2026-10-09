@@ -10,6 +10,7 @@ export const checkoutSchema = z.object({
   pincode: z.string().optional(),
   delivery_notes: z.string().optional(),
   payment_method: z.enum(['whatsapp', 'cod']),
+  locale: z.enum(['en', 'ar']).optional().default('en'),
 });
 
 export const productSchema = z.object({

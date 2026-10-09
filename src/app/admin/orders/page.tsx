@@ -21,8 +21,8 @@ const INITIAL_DEMO_ORDERS: Order[] = [
     email_sent: true,
     created_at: new Date().toISOString(),
     order_items: [
-      { product_name: 'Blush Elegance Bouquet', price: 280, quantity: 1, total: 280 },
-      { product_name: 'Classic Red Roses Vase', price: 275, quantity: 1, total: 275 },
+      { product_name: 'Blush Elegance Bouquet', product_name_ar: 'باقة أناقة الورد الوردي', price: 280, quantity: 1, total: 280 },
+      { product_name: 'Classic Red Roses Vase', product_name_ar: 'فازة الجوري الأحمر الكلاسيكي', price: 275, quantity: 1, total: 275 },
     ],
   },
   {
@@ -41,7 +41,7 @@ const INITIAL_DEMO_ORDERS: Order[] = [
     email_sent: true,
     created_at: new Date(Date.now() - 3600000).toISOString(),
     order_items: [
-      { product_name: 'Pastel Dream Bouquet', price: 320, quantity: 1, total: 320 },
+      { product_name: 'Pastel Dream Bouquet', product_name_ar: 'باقة حلم الباستيل الرقيقة', price: 320, quantity: 1, total: 320 },
     ],
   },
 ];
@@ -75,17 +75,17 @@ export default function AdminOrdersPage() {
       {/* Filters Bar */}
       <div className="bg-white p-4 rounded-2xl border border-ink-100 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
           <input
             type="text"
             placeholder="Search by order # or customer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-cream-50 border border-ink-100 rounded-xl pl-9 pr-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+            className="w-full bg-cream-50 border border-ink-100 rounded-xl ps-9 pe-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
           />
         </div>
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter className="w-4 h-4 text-ink-400" />
           <button
             onClick={() => setSourceFilter('all')}
@@ -117,7 +117,7 @@ export default function AdminOrdersPage() {
       {/* Orders Table */}
       <div className="bg-white rounded-3xl p-6 border border-ink-100 shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-start border-collapse text-xs">
             <thead>
               <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
                 <th className="py-3 px-4">Order Ref</th>
@@ -139,27 +139,29 @@ export default function AdminOrdersPage() {
                   </td>
                   <td className="py-4 px-4">
                     <p className="font-bold text-plum-900">{order.customer_name}</p>
-                    <p className="text-[11px] text-ink-500">{order.customer_phone}</p>
+                    <p className="text-[11px] text-ink-500" dir="ltr">{order.customer_phone}</p>
                     <p className="text-[11px] text-ink-500 truncate max-w-xs">{order.delivery_address}, {order.city}</p>
                   </td>
                   <td className="py-4 px-4">
                     {order.source === 'whatsapp' ? (
-                      <span className="inline-flex items-center space-x-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
                         <MessageSquare className="w-3 h-3 text-emerald-600 fill-current" />
                         <span>WHATSAPP</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center space-x-1 bg-plum-50 text-plum-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-200">
+                      <span className="inline-flex items-center gap-1 bg-plum-50 text-plum-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-200">
                         <Banknote className="w-3 h-3 text-plum-800" />
                         <span>COD</span>
                       </span>
                     )}
                   </td>
                   <td className="py-4 px-4">
-                    <ul className="space-y-0.5 text-[11px] text-ink-700">
+                    <ul className="space-y-1 text-[11px] text-ink-700">
                       {order.order_items?.map((item, idx) => (
                         <li key={idx}>
-                          • {item.product_name} × {item.quantity}
+                          • <span className="font-semibold">{item.product_name}</span>
+                          {item.product_name_ar && <span className="text-plum-700 font-arabic text-[11px] ms-1">({item.product_name_ar})</span>}
+                          {' '}× {item.quantity}
                         </li>
                       ))}
                     </ul>
@@ -190,3 +192,4 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
+

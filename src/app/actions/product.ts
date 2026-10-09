@@ -3,12 +3,18 @@
 import { createClient, verifyAdminServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Product } from '@/types';
+import { generateProductArabicFields } from '@/lib/translation/service';
 
 export interface SaveProductPayload {
   id?: string;
   name: string;
+  name_ar?: string | null;
   slug?: string;
   description?: string;
+  description_ar?: string | null;
+  short_description?: string;
+  short_description_ar?: string | null;
+  arabic_translation_source?: 'manual' | 'automatic' | 'auto';
   price: number;
   compare_at_price?: number | null;
   category_id?: string | null;
@@ -75,10 +81,33 @@ export async function saveProductAction(payload: SaveProductPayload) {
   try {
     const supabase = await createClient();
 
+    // Multilingual resolution: Preserve manual Arabic or auto-generate if empty
+    let finalNameAr = payload.name_ar && payload.name_ar.trim().length > 0 ? payload.name_ar.trim() : null;
+    let finalDescAr = payload.description_ar && payload.description_ar.trim().length > 0 ? payload.description_ar.trim() : null;
+    let finalShortDescAr = payload.short_description_ar && payload.short_description_ar.trim().length > 0 ? payload.short_description_ar.trim() : null;
+    let translationSource: 'manual' | 'automatic' | 'auto' = payload.arabic_translation_source || (finalNameAr ? 'manual' : 'automatic');
+
+    if (!finalNameAr) {
+      const generated = await generateProductArabicFields({
+        name: payload.name.trim(),
+        description: payload.description,
+        shortDescription: payload.short_description,
+      });
+      finalNameAr = generated.name_ar;
+      if (!finalDescAr) finalDescAr = generated.description_ar;
+      if (!finalShortDescAr) finalShortDescAr = generated.short_description_ar;
+      translationSource = 'automatic';
+    }
+
     const dbRecord = {
       name: payload.name.trim(),
+      name_ar: finalNameAr,
       slug: generatedSlug,
       description: payload.description ? payload.description.trim() : null,
+      description_ar: finalDescAr,
+      short_description: payload.short_description ? payload.short_description.trim() : null,
+      short_description_ar: finalShortDescAr,
+      arabic_translation_source: translationSource,
       price: payload.price,
       compare_at_price: payload.compare_at_price ?? null,
       category_id: payload.category_id || null,

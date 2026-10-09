@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon, Layers } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Collection, Product } from '@/types';
 import { DEMO_OCCASIONS, DEMO_PRODUCTS } from '@/lib/data/storefront';
 import {
@@ -12,6 +12,7 @@ import {
   SaveCollectionPayload,
 } from '@/app/actions/collection';
 import { getAdminProductsAction } from '@/app/actions/product';
+import { translateTextAction } from '@/app/actions/translate';
 import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminCollectionsPage() {
@@ -19,6 +20,7 @@ export default function AdminCollectionsPage() {
   const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -45,6 +47,42 @@ export default function AdminCollectionsPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleAutoTranslate = async () => {
+    if (!editingCollection.title || editingCollection.title.trim().length === 0) {
+      setFeedback({ type: 'error', message: 'Please enter collection title in English first.' });
+      setTimeout(() => setFeedback(null), 3000);
+      return;
+    }
+
+    setTranslating(true);
+    try {
+      const titleRes = await translateTextAction(editingCollection.title.trim(), 'collection_name');
+      const translatedTitle = titleRes.success && titleRes.translation ? titleRes.translation : (editingCollection.title_ar || '');
+      
+      let translatedSubtitle = editingCollection.subtitle_ar || '';
+      if (editingCollection.subtitle && editingCollection.subtitle.trim().length > 0 && !editingCollection.subtitle_ar) {
+        const subRes = await translateTextAction(editingCollection.subtitle.trim(), 'collection_subtitle');
+        if (subRes.success && subRes.translation) {
+          translatedSubtitle = subRes.translation;
+        }
+      }
+
+      setEditingCollection({
+        ...editingCollection,
+        title_ar: translatedTitle,
+        subtitle_ar: translatedSubtitle,
+      });
+
+      setFeedback({ type: 'success', message: '✨ Arabic collection translation generated!' });
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (e) {
+      setFeedback({ type: 'error', message: 'Failed to auto-translate collection.' });
+      setTimeout(() => setFeedback(null), 3000);
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,14 +129,16 @@ export default function AdminCollectionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-3xl font-bold text-plum-900">Collections & Occasions</h1>
-          <p className="text-xs text-ink-500 mt-1">Group products into occasions, flowers, and promotional collections.</p>
+          <p className="text-xs text-ink-500 mt-1">Group products into bilingual occasions, flowers, and promotional collections.</p>
         </div>
 
         <button
           onClick={() => {
             setEditingCollection({
               title: '',
+              title_ar: '',
               subtitle: '',
+              subtitle_ar: '',
               type: 'occasion',
               image_url: '/demo-media/product_blush_bouquet.jpg',
               sort_order: collections.length + 1,
@@ -107,7 +147,7 @@ export default function AdminCollectionsPage() {
             });
             setModalOpen(true);
           }}
-          className="inline-flex items-center space-x-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-5 py-3 rounded-xl shadow-sm"
+          className="inline-flex items-center gap-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-5 py-3 rounded-xl shadow-sm"
         >
           <Plus className="w-4 h-4" />
           <span>Add Collection</span>
@@ -133,21 +173,21 @@ export default function AdminCollectionsPage() {
             <span className="text-xs font-medium">Loading collections...</span>
           </div>
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-start border-collapse text-xs">
             <thead>
               <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4">Collection</th>
+                <th className="py-3 px-4">Collection (EN / AR)</th>
                 <th className="py-3 px-4">Type</th>
                 <th className="py-3 px-4">Products Linked</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-4 text-end">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
               {collections.map((col) => (
                 <tr key={col.id} className="hover:bg-cream-50 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-plum-900">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-3">
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
                         <Image
                           src={col.image_url || '/demo-media/product_blush_bouquet.jpg'}
@@ -158,7 +198,10 @@ export default function AdminCollectionsPage() {
                       </div>
                       <div>
                         <p>{col.title}</p>
-                        <p className="text-[11px] text-ink-500 font-mono">/{col.slug}</p>
+                        {col.title_ar && (
+                          <p className="text-[11px] text-plum-700 font-arabic font-normal">{col.title_ar}</p>
+                        )}
+                        <p className="text-[10px] text-ink-400 font-mono">/{col.slug}</p>
                       </div>
                     </div>
                   </td>
@@ -168,25 +211,27 @@ export default function AdminCollectionsPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     {col.active ? (
-                      <span className="text-emerald-700 flex items-center space-x-1 font-semibold">
+                      <span className="text-emerald-700 flex items-center gap-1 font-semibold">
                         <CheckCircle className="w-4 h-4" />
                         <span>Active</span>
                       </span>
                     ) : (
-                      <span className="text-ink-400 flex items-center space-x-1 font-semibold">
+                      <span className="text-ink-400 flex items-center gap-1 font-semibold">
                         <XCircle className="w-4 h-4" />
                         <span>Inactive</span>
                       </span>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 text-right space-x-1">
+                  <td className="py-3.5 px-4 text-end space-x-1 rtl:space-x-reverse">
                     <button
                       onClick={() => {
                         setEditingCollection({
                           id: col.id,
                           title: col.title,
+                          title_ar: col.title_ar || '',
                           slug: col.slug,
                           subtitle: col.subtitle,
+                          subtitle_ar: col.subtitle_ar || '',
                           image_url: col.image_url,
                           type: col.type,
                           sort_order: col.sort_order,
@@ -218,30 +263,67 @@ export default function AdminCollectionsPage() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 bg-plum-950/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-ink-100 max-h-[90vh] overflow-y-auto">
-            <h2 className="font-serif text-2xl font-bold text-plum-900 mb-4">
-              {editingCollection.id ? 'Edit Collection' : 'Create Collection'}
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-2xl font-bold text-plum-900">
+                {editingCollection.id ? 'Edit Collection' : 'Create Collection'}
+              </h2>
+              <button
+                type="button"
+                onClick={handleAutoTranslate}
+                disabled={translating}
+                className="inline-flex items-center gap-1.5 bg-blush-100 hover:bg-blush-200 text-plum-900 font-bold px-3 py-1.5 rounded-xl text-xs transition-colors"
+              >
+                {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-gold-600" />}
+                <span>{translating ? 'Translating...' : '✨ Generate Arabic'}</span>
+              </button>
+            </div>
 
             <form onSubmit={handleSave} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-plum-900 mb-1">Collection Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingCollection.title || ''}
-                  onChange={(e) => setEditingCollection({ ...editingCollection, title: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1">Collection Title (English) *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingCollection.title || ''}
+                    onChange={(e) => setEditingCollection({ ...editingCollection, title: e.target.value })}
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">عنوان المجموعة (العربية)</label>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    value={editingCollection.title_ar || ''}
+                    onChange={(e) => setEditingCollection({ ...editingCollection, title_ar: e.target.value })}
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-plum-900 mb-1">Subtitle / Description</label>
-                <input
-                  type="text"
-                  value={editingCollection.subtitle || ''}
-                  onChange={(e) => setEditingCollection({ ...editingCollection, subtitle: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1">Subtitle (English)</label>
+                  <input
+                    type="text"
+                    value={editingCollection.subtitle || ''}
+                    onChange={(e) => setEditingCollection({ ...editingCollection, subtitle: e.target.value })}
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-plum-900 mb-1 font-arabic">الوصف الفرعي (العربية)</label>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    value={editingCollection.subtitle_ar || ''}
+                    onChange={(e) => setEditingCollection({ ...editingCollection, subtitle_ar: e.target.value })}
+                    className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none font-arabic"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -278,7 +360,7 @@ export default function AdminCollectionsPage() {
 
               <div>
                 <label className="block font-semibold text-plum-900 mb-1">Image (Cloudinary URL)</label>
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={editingCollection.image_url || ''}
@@ -288,7 +370,7 @@ export default function AdminCollectionsPage() {
                   <button
                     type="button"
                     onClick={() => setMediaPickerOpen(true)}
-                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shrink-0"
+                    className="bg-plum-100 hover:bg-plum-200 text-plum-900 font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0"
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span>Choose</span>
@@ -303,7 +385,7 @@ export default function AdminCollectionsPage() {
                   {products.map((prod) => {
                     const isChecked = (editingCollection.product_ids || []).includes(prod.id);
                     return (
-                      <label key={prod.id} className="flex items-center space-x-2 cursor-pointer text-xs">
+                      <label key={prod.id} className="flex items-center gap-2 cursor-pointer text-xs">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -311,6 +393,7 @@ export default function AdminCollectionsPage() {
                           className="text-plum-800 rounded focus:ring-plum-800"
                         />
                         <span className="text-ink-900 font-medium">{prod.name}</span>
+                        {prod.name_ar && <span className="text-plum-700 font-arabic text-[11px]">({prod.name_ar})</span>}
                       </label>
                     );
                   })}
@@ -318,7 +401,7 @@ export default function AdminCollectionsPage() {
               </div>
 
               <div className="flex items-center pt-2">
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editingCollection.active ?? true}
@@ -329,7 +412,7 @@ export default function AdminCollectionsPage() {
                 </label>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-ink-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-ink-100">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
@@ -340,7 +423,7 @@ export default function AdminCollectionsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-plum-900 text-white font-semibold flex items-center space-x-2 disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-plum-900 text-white font-semibold flex items-center gap-2 disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{saving ? 'Saving...' : 'Save Collection'}</span>
@@ -360,3 +443,4 @@ export default function AdminCollectionsPage() {
     </div>
   );
 }
+

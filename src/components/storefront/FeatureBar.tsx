@@ -1,21 +1,26 @@
+'use client';
+
 import React from 'react';
 import { Flower2, Truck, Award, Gift, ShieldCheck, MapPin } from 'lucide-react';
-
-const FEATURES = [
-  { icon: Flower2, title: 'Fresh Flowers', subtitle: 'Sourced Daily' },
-  { icon: Truck, title: 'Same-Day', subtitle: 'Delivery' },
-  { icon: Award, title: 'Premium', subtitle: 'Quality' },
-  { icon: Gift, title: 'Beautifully', subtitle: 'Wrapped' },
-  { icon: ShieldCheck, title: 'Secure', subtitle: 'Payment' },
-  { icon: MapPin, title: 'Easy', subtitle: 'Tracking' },
-];
+import { useLocale } from '@/lib/i18n/context';
 
 export function FeatureBar() {
+  const { t } = useLocale();
+
+  const features = [
+    { icon: Flower2, title: t.features.freshFlowers, subtitle: t.features.sourcedDaily },
+    { icon: Truck, title: t.features.sameDay, subtitle: t.features.delivery },
+    { icon: Award, title: t.features.premium, subtitle: t.features.quality },
+    { icon: Gift, title: t.features.beautifully, subtitle: t.features.wrapped },
+    { icon: ShieldCheck, title: t.features.secure, subtitle: t.features.payment },
+    { icon: MapPin, title: t.features.easy, subtitle: t.features.tracking },
+  ];
+
   return (
     <section className="bg-cream-200/80 border-b border-ink-100/60 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 text-center">
-          {FEATURES.map((item, idx) => {
+          {features.map((item, idx) => {
             const IconComponent = item.icon;
             return (
               <div key={idx} className="flex flex-col items-center justify-center space-y-1.5 group">

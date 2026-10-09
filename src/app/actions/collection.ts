@@ -3,12 +3,15 @@
 import { createClient, verifyAdminServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Collection } from '@/types';
+import { translateTextServer } from '@/lib/translation/service';
 
 export interface SaveCollectionPayload {
   id?: string;
   title: string;
+  title_ar?: string | null;
   slug?: string;
   subtitle?: string;
+  subtitle_ar?: string | null;
   image_url?: string;
   type: 'occasion' | 'flower' | 'collection';
   sort_order?: number;
@@ -68,10 +71,22 @@ export async function saveCollectionAction(payload: SaveCollectionPayload) {
   try {
     const supabase = await createClient();
 
+    let finalTitleAr = payload.title_ar && payload.title_ar.trim().length > 0 ? payload.title_ar.trim() : null;
+    let finalSubtitleAr = payload.subtitle_ar && payload.subtitle_ar.trim().length > 0 ? payload.subtitle_ar.trim() : null;
+
+    if (!finalTitleAr) {
+      finalTitleAr = await translateTextServer(payload.title.trim(), 'collection_name');
+    }
+    if (!finalSubtitleAr && payload.subtitle && payload.subtitle.trim().length > 0) {
+      finalSubtitleAr = await translateTextServer(payload.subtitle.trim(), 'general');
+    }
+
     const dbRecord = {
       title: payload.title.trim(),
+      title_ar: finalTitleAr,
       slug: generatedSlug,
       subtitle: payload.subtitle ? payload.subtitle.trim() : null,
+      subtitle_ar: finalSubtitleAr,
       image_url: payload.image_url ? payload.image_url.trim() : null,
       type: payload.type || 'collection',
       sort_order: payload.sort_order ?? 0,

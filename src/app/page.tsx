@@ -21,10 +21,12 @@ import {
   getCollections,
   getBlogPosts,
 } from '@/lib/data/queries';
+import { getServerTranslations } from '@/lib/i18n/server';
 
 export const instant = false;
 
 export default async function StorefrontPage() {
+  const { t } = await getServerTranslations();
   const settings = await getSiteSettings();
   const newArrivals = await getProducts({ isNewArrival: true, limit: 5 });
   const handBouquets = await getProducts({ categorySlug: 'hand-bouquets', limit: 5 });
@@ -52,8 +54,8 @@ export default async function StorefrontPage() {
 
         {/* 5. New Arrivals Rail */}
         <ProductRail
-          title="New Arrivals"
-          subtitle="Fresh blooms, just for you."
+          title={t.sections.newArrivalsTitle}
+          subtitle={t.sections.newArrivalsSubtitle}
           products={newArrivals}
           viewAllLink="/products"
         />
@@ -63,8 +65,8 @@ export default async function StorefrontPage() {
 
         {/* 7. Hand Bouquets Rail */}
         <ProductRail
-          title="Hand Bouquets"
-          subtitle="Wrapped with care, made to impress."
+          title={t.sections.handBouquetsTitle}
+          subtitle={t.sections.handBouquetsSubtitle}
           products={handBouquets}
           viewAllLink="/products?category=hand-bouquets"
         />

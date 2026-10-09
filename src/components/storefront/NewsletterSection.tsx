@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { Mail, CheckCircle2 } from 'lucide-react';
+import { useLocale } from '@/lib/i18n/context';
 
 export function NewsletterSection() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const { t } = useLocale();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,23 +23,23 @@ export function NewsletterSection() {
         </div>
 
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-plum-900 tracking-tight">
-          Subscribe to Our Newsletter
+          {t.newsletter.title}
         </h2>
 
         <p className="text-xs sm:text-sm text-ink-500 max-w-md mx-auto mt-2 mb-8 leading-relaxed font-normal">
-          Be the first to know about new seasonal blooms, exclusive offers and expert floral arrangement tips.
+          {t.newsletter.subtitle}
         </p>
 
         {subscribed ? (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 max-w-md mx-auto flex items-center justify-center space-x-2 text-xs font-semibold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Thank you for subscribing to Burble newsletter!</span>
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 max-w-md mx-auto flex items-center justify-center space-x-2 rtl:space-x-reverse text-xs font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{t.newsletter.successMessage}</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="max-w-md mx-auto flex items-center space-x-2">
+          <form onSubmit={handleSubmit} className="max-w-md mx-auto flex items-center space-x-2 rtl:space-x-reverse">
             <input
               type="email"
-              placeholder="Your email address"
+              placeholder={t.newsletter.placeholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -47,7 +49,7 @@ export function NewsletterSection() {
               type="submit"
               className="bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-6 py-3 rounded-full transition-colors shadow-md shrink-0"
             >
-              Subscribe
+              {t.newsletter.subscribeButton}
             </button>
           </form>
         )}

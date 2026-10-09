@@ -3,13 +3,17 @@
 import { createClient, verifyAdminServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { BlogPost } from '@/types';
+import { translateTextServer } from '@/lib/translation/service';
 
 export interface SaveBlogPostPayload {
   id?: string;
   title: string;
+  title_ar?: string | null;
   slug?: string;
   excerpt?: string;
+  excerpt_ar?: string | null;
   content: string;
+  content_ar?: string | null;
   cover_image?: string;
   author?: string;
   is_published?: boolean;
@@ -57,11 +61,28 @@ export async function saveBlogPostAction(payload: SaveBlogPostPayload) {
   try {
     const supabase = await createClient();
 
+    let finalTitleAr = payload.title_ar && payload.title_ar.trim().length > 0 ? payload.title_ar.trim() : null;
+    let finalExcerptAr = payload.excerpt_ar && payload.excerpt_ar.trim().length > 0 ? payload.excerpt_ar.trim() : null;
+    let finalContentAr = payload.content_ar && payload.content_ar.trim().length > 0 ? payload.content_ar.trim() : null;
+
+    if (!finalTitleAr) {
+      finalTitleAr = await translateTextServer(payload.title.trim(), 'blog_title');
+    }
+    if (!finalExcerptAr && payload.excerpt && payload.excerpt.trim().length > 0) {
+      finalExcerptAr = await translateTextServer(payload.excerpt.trim(), 'blog_content');
+    }
+    if (!finalContentAr) {
+      finalContentAr = await translateTextServer(payload.content.trim(), 'blog_content');
+    }
+
     const dbRecord = {
       title: payload.title.trim(),
+      title_ar: finalTitleAr,
       slug: generatedSlug,
       excerpt: payload.excerpt ? payload.excerpt.trim() : null,
+      excerpt_ar: finalExcerptAr,
       content: payload.content.trim(),
+      content_ar: finalContentAr,
       cover_image: payload.cover_image ? payload.cover_image.trim() : null,
       author: payload.author ? payload.author.trim() : 'Burble Florist',
       is_published: payload.is_published ?? true,
