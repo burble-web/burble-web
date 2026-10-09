@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, BookOpen } from 'lucide-react';
 import { BlogPost } from '@/types';
 import { useLocale } from '@/lib/i18n/context';
 
@@ -42,13 +42,17 @@ export function BlogSection({ posts }: BlogSectionProps) {
                 className="bg-white rounded-2xl overflow-hidden border border-ink-100/70 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
-                  <div className="relative h-44 w-full bg-cream-200 overflow-hidden">
-                    <Image
-                      src={post.cover_image || '/demo-media/hero_slide_two.jpg'}
-                      alt={title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                  <div className="relative h-44 w-full bg-cream-200 overflow-hidden flex items-center justify-center">
+                    {post.cover_image ? (
+                      <Image
+                        src={post.cover_image}
+                        alt={title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <BookOpen className="w-8 h-8 text-plum-400" />
+                    )}
                   </div>
                   <div className="p-5">
                     <h3 className="font-serif text-base font-bold text-plum-900 group-hover:text-plum-700 transition-colors line-clamp-2">

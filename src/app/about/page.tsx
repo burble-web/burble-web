@@ -4,9 +4,9 @@ import Image from 'next/image';
 import { AnnouncementBar } from '@/components/storefront/AnnouncementBar';
 import { Header } from '@/components/storefront/Header';
 import { Footer } from '@/components/storefront/Footer';
-import { getSiteSettings } from '@/lib/data/queries';
+import { getSiteSettings, getProducts } from '@/lib/data/queries';
 import { getServerTranslations } from '@/lib/i18n/server';
-import { Flower2, Award, Clock } from 'lucide-react';
+import { Flower2, Award, Clock, Heart, Sparkles } from 'lucide-react';
 
 export const instant = false;
 
@@ -21,6 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AboutPage() {
   const settings = await getSiteSettings();
   const { t } = await getServerTranslations();
+  const featured = await getProducts({ isFeatured: true, limit: 1 });
+  const bannerImage = featured[0]?.main_image_url;
 
   return (
     <div className="min-h-screen flex flex-col bg-cream-100 font-sans">
@@ -40,13 +42,28 @@ export default async function AboutPage() {
           </p>
         </div>
 
-        <div className="relative aspect-video max-w-4xl mx-auto rounded-3xl overflow-hidden shadow-xl mb-16 border border-ink-100">
-          <Image
-            src="/demo-media/hero_desktop.jpg"
-            alt="Burble Floral Studio"
-            fill
-            className="object-cover"
-          />
+        {/* Feature Hero Card */}
+        <div className="relative aspect-video max-w-4xl mx-auto rounded-3xl overflow-hidden shadow-xl mb-16 border border-ink-100 bg-plum-950 flex items-center justify-center text-center p-8">
+          {bannerImage ? (
+            <Image
+              src={bannerImage}
+              alt="Burble Floral Studio"
+              fill
+              className="object-cover opacity-80"
+            />
+          ) : (
+            <div className="space-y-4 max-w-md relative z-10 text-white">
+              <div className="w-16 h-16 rounded-full bg-plum-800/80 border border-plum-700 flex items-center justify-center mx-auto text-blush-200 shadow-lg">
+                <Sparkles className="w-8 h-8 stroke-[1.5]" />
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+                Artisanal Flower Atelier in Qatar
+              </h2>
+              <p className="text-xs sm:text-sm text-plum-200 font-light leading-relaxed">
+                Handcrafted daily with fresh blooms imported directly from premium growers across Ecuador and Holland.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
@@ -80,4 +97,3 @@ export default async function AboutPage() {
     </div>
   );
 }
-

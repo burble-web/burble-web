@@ -1,76 +1,92 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ShoppingBag, MessageSquare, Banknote, Search, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, MessageSquare, Banknote, Search, Filter, Loader2, RefreshCw } from 'lucide-react';
 import { Order, OrderStatus } from '@/types';
+import { getAdminOrdersAction, updateOrderStatusAction } from '@/app/actions/order';
+import { useLocale } from '@/lib/i18n/context';
 
-const INITIAL_DEMO_ORDERS: Order[] = [
-  {
-    id: 'ord-1',
-    order_number: 'BURBLE-20261007-4819',
-    source: 'whatsapp',
-    customer_name: 'Fatima Al-Thani',
-    customer_email: 'fatima@example.com',
-    customer_phone: '+974 5555 1234',
-    delivery_address: 'Villa 14, West Bay Lagoon',
-    city: 'Doha',
-    subtotal: 555.00,
-    shipping_fee: 25.00,
-    total_amount: 580.00,
-    status: 'confirmed',
-    email_sent: true,
-    created_at: new Date().toISOString(),
-    order_items: [
-      { product_name: 'Blush Elegance Bouquet', product_name_ar: 'باقة أناقة الورد الوردي', price: 280, quantity: 1, total: 280 },
-      { product_name: 'Classic Red Roses Vase', product_name_ar: 'فازة الجوري الأحمر الكلاسيكي', price: 275, quantity: 1, total: 275 },
-    ],
-  },
-  {
-    id: 'ord-2',
-    order_number: 'BURBLE-20261007-9102',
-    source: 'cod',
-    customer_name: 'Rashid Mansoor',
-    customer_email: 'rashid@example.com',
-    customer_phone: '+974 6666 8899',
-    delivery_address: 'Building 45, Pearl Qatar',
-    city: 'Doha',
-    subtotal: 320.00,
-    shipping_fee: 0.00,
-    total_amount: 320.00,
-    status: 'pending',
-    email_sent: true,
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    order_items: [
-      { product_name: 'Pastel Dream Bouquet', product_name_ar: 'باقة حلم الباستيل الرقيقة', price: 320, quantity: 1, total: 320 },
-    ],
-  },
-];
+const ORDER_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'cancelled'];
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_DEMO_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [sourceFilter, setSourceFilter] = useState<'all' | 'whatsapp' | 'cod'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const { formatPrice, locale } = useLocale();
+
+  const loadOrders = async () => {
+    setLoading(true);
+    const res = await getAdminOrdersAction();
+    if (res.success && res.data) {
+      setOrders(res.data);
+    } else {
+      setOrders([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
   const filteredOrders = orders.filter((o) => {
     const matchesSource = sourceFilter === 'all' || o.source === sourceFilter;
     const matchesSearch =
-      o.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.customer_name.toLowerCase().includes(searchQuery.toLowerCase());
+      (o.order_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.customer_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.customer_phone || '').includes(searchQuery);
     return matchesSource && matchesSearch;
   });
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    setUpdatingId(orderId);
+    const res = await updateOrderStatusAction(orderId, newStatus);
+    setUpdatingId(null);
+
+    if (res.success) {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      );
+      setFeedback({ type: 'success', message: `Order status updated to ${newStatus}.` });
+      setTimeout(() => setFeedback(null), 2500);
+    } else {
+      setFeedback({ type: 'error', message: res.error || 'Failed to update order status.' });
+      setTimeout(() => setFeedback(null), 3000);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-plum-900">Orders Management</h1>
-        <p className="text-xs text-ink-500 mt-1">Monitor, filter and update customer order fulfillment statuses.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-3xl font-bold text-plum-900">Orders Management</h1>
+          <p className="text-xs text-ink-500 mt-1">Monitor, filter and update real-time customer order fulfillment statuses.</p>
+        </div>
+
+        <button
+          onClick={loadOrders}
+          disabled={loading}
+          className="inline-flex items-center gap-2 bg-cream-200 hover:bg-cream-300 text-plum-900 px-4 py-2 rounded-xl text-xs font-semibold transition-colors border border-ink-100"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh Orders</span>
+        </button>
       </div>
+
+      {feedback && (
+        <div
+          className={`p-3.5 rounded-xl text-xs font-medium border ${
+            feedback.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200'
+          }`}
+        >
+          {feedback.message}
+        </div>
+      )}
 
       {/* Filters Bar */}
       <div className="bg-white p-4 rounded-2xl border border-ink-100 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
@@ -78,118 +94,151 @@ export default function AdminOrdersPage() {
           <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
           <input
             type="text"
-            placeholder="Search by order # or customer..."
+            placeholder="Search by order #, name or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-cream-50 border border-ink-100 rounded-xl ps-9 pe-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-ink-400" />
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+          <Filter className="w-4 h-4 text-ink-400 shrink-0" />
           <button
             onClick={() => setSourceFilter('all')}
-            className={`px-3 py-1.5 rounded-lg font-semibold ${
-              sourceFilter === 'all' ? 'bg-plum-900 text-white' : 'bg-cream-100 text-ink-700'
+            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-colors ${
+              sourceFilter === 'all' ? 'bg-plum-900 text-white' : 'bg-cream-100 text-ink-700 hover:bg-cream-200'
             }`}
           >
-            All Sources
-          </button>
-          <button
-            onClick={() => setSourceFilter('cod')}
-            className={`px-3 py-1.5 rounded-lg font-semibold ${
-              sourceFilter === 'cod' ? 'bg-plum-900 text-white' : 'bg-cream-100 text-ink-700'
-            }`}
-          >
-            COD Only
+            All Sources ({orders.length})
           </button>
           <button
             onClick={() => setSourceFilter('whatsapp')}
-            className={`px-3 py-1.5 rounded-lg font-semibold ${
-              sourceFilter === 'whatsapp' ? 'bg-emerald-600 text-white' : 'bg-cream-100 text-ink-700'
+            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-colors ${
+              sourceFilter === 'whatsapp' ? 'bg-emerald-700 text-white' : 'bg-cream-100 text-ink-700 hover:bg-cream-200'
             }`}
           >
-            WhatsApp Only
+            WhatsApp ({orders.filter((o) => o.source === 'whatsapp').length})
+          </button>
+          <button
+            onClick={() => setSourceFilter('cod')}
+            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-colors ${
+              sourceFilter === 'cod' ? 'bg-plum-900 text-white' : 'bg-cream-100 text-ink-700 hover:bg-cream-200'
+            }`}
+          >
+            Cash on Delivery ({orders.filter((o) => o.source === 'cod').length})
           </button>
         </div>
       </div>
 
       {/* Orders Table */}
       <div className="bg-white rounded-3xl p-6 border border-ink-100 shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-start border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4">Order Ref</th>
-                <th className="py-3 px-4">Customer & Address</th>
-                <th className="py-3 px-4">Source</th>
-                <th className="py-3 px-4">Items</th>
-                <th className="py-3 px-4">Total</th>
-                <th className="py-3 px-4">Fulfillment Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-cream-50 transition-colors">
-                  <td className="py-4 px-4 font-mono font-bold text-plum-900">
-                    #{order.order_number}
-                    <p className="text-[10px] text-ink-400 font-normal font-sans">
-                      {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </td>
-                  <td className="py-4 px-4">
-                    <p className="font-bold text-plum-900">{order.customer_name}</p>
-                    <p className="text-[11px] text-ink-500" dir="ltr">{order.customer_phone}</p>
-                    <p className="text-[11px] text-ink-500 truncate max-w-xs">{order.delivery_address}, {order.city}</p>
-                  </td>
-                  <td className="py-4 px-4">
-                    {order.source === 'whatsapp' ? (
-                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
-                        <MessageSquare className="w-3 h-3 text-emerald-600 fill-current" />
-                        <span>WHATSAPP</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 bg-plum-50 text-plum-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-200">
-                        <Banknote className="w-3 h-3 text-plum-800" />
-                        <span>COD</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-4 px-4">
-                    <ul className="space-y-1 text-[11px] text-ink-700">
-                      {order.order_items?.map((item, idx) => (
-                        <li key={idx}>
-                          • <span className="font-semibold">{item.product_name}</span>
-                          {item.product_name_ar && <span className="text-plum-700 font-arabic text-[11px] ms-1">({item.product_name_ar})</span>}
-                          {' '}× {item.quantity}
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
-                  <td className="py-4 px-4 font-bold text-plum-900">
-                    QAR {order.total_amount.toFixed(2)}
-                  </td>
-                  <td className="py-4 px-4">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                      className="bg-cream-50 border border-ink-100 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-plum-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="processing">Processing</option>
-                      <option value="out_for_delivery">Out for Delivery</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </td>
+        {loading ? (
+          <div className="py-16 text-center text-ink-400 flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-plum-800 mb-2" />
+            <span className="text-xs">Loading customer orders from database...</span>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="py-16 text-center border border-dashed border-ink-200 rounded-2xl">
+            <ShoppingBag className="w-12 h-12 text-ink-300 mx-auto mb-3 stroke-[1.5]" />
+            <p className="font-serif text-lg font-bold text-plum-900">No Orders Found</p>
+            <p className="text-xs text-ink-500 mt-1 max-w-sm mx-auto">
+              {searchQuery || sourceFilter !== 'all'
+                ? 'Try adjusting your search criteria or filter options.'
+                : 'Customer orders placed via WhatsApp or COD will appear here in real time.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-start border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4">Order #</th>
+                  <th className="py-3 px-4">Customer</th>
+                  <th className="py-3 px-4">Items Summary</th>
+                  <th className="py-3 px-4">Source</th>
+                  <th className="py-3 px-4">Total</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Placed At</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-cream-50/80 transition-colors">
+                    <td className="py-4 px-4 font-mono font-bold text-plum-900 whitespace-nowrap">
+                      #{order.order_number}
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="font-semibold text-ink-900">{order.customer_name}</div>
+                      <div className="text-[11px] text-ink-500">{order.customer_phone}</div>
+                      <div className="text-[11px] text-ink-400 truncate max-w-xs">{order.delivery_address}, {order.city}</div>
+                    </td>
+                    <td className="py-4 px-4">
+                      {order.order_items && order.order_items.length > 0 ? (
+                        <div className="space-y-1 max-w-xs">
+                          {order.order_items.map((item, idx) => (
+                            <div key={idx} className="text-[11px] text-ink-700 flex justify-between">
+                              <span className="truncate">{item.product_name} × {item.quantity}</span>
+                              <span className="font-medium ms-2">{formatPrice(item.total)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-ink-400 italic">No item snapshot</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      {order.source === 'whatsapp' ? (
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
+                          <MessageSquare className="w-3 h-3 text-emerald-600 fill-current" />
+                          <span>WHATSAPP</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-plum-50 text-plum-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-200">
+                          <Banknote className="w-3 h-3 text-plum-800" />
+                          <span>COD</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <span className="font-bold text-plum-900 text-sm">
+                        {formatPrice(order.total_amount)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <select
+                        value={order.status}
+                        disabled={updatingId === order.id}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                        className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg border focus:outline-none cursor-pointer ${
+                          order.status === 'delivered' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                          order.status === 'cancelled' ? 'bg-rose-50 text-rose-800 border-rose-300' :
+                          order.status === 'out_for_delivery' ? 'bg-indigo-50 text-indigo-800 border-indigo-300' :
+                          'bg-amber-50 text-amber-800 border-amber-300'
+                        }`}
+                      >
+                        {ORDER_STATUSES.map((st) => (
+                          <option key={st} value={st}>
+                            {st.replace(/_/g, ' ').toUpperCase()}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-4 px-4 whitespace-nowrap text-ink-500 text-[11px]">
+                      {new Date(order.created_at).toLocaleDateString(locale === 'ar' ? 'ar-QA' : 'en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

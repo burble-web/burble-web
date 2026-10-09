@@ -20,6 +20,11 @@ export interface SaveBlogPostPayload {
 }
 
 export async function getAdminBlogPostsAction(): Promise<{ success: boolean; data?: BlogPost[]; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin authentication required.' };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase

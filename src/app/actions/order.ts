@@ -1,10 +1,10 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, verifyAdminServer } from '@/lib/supabase/server';
 import { checkoutSchema } from '@/lib/validation/schemas';
-import { CheckoutFormData, CartItem, Order } from '@/types';
+import { CheckoutFormData, CartItem, Order, OrderStatus } from '@/types';
 import { sendBrevoEmail, buildCustomerOrderEmailHtml, buildAdminOrderEmailHtml } from '@/lib/brevo/email';
-import { DEMO_PRODUCTS } from '@/lib/data/storefront';
+import { revalidatePath } from 'next/cache';
 
 export async function processCheckoutAction(formData: CheckoutFormData, cartItems: CartItem[]) {
   // 1. Server-side Zod validation
@@ -34,49 +34,39 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
       quantity: item.quantity,
     }));
 
-    // Attempt RPC call on Supabase
+    // Call create_order RPC on Supabase (Atomic transaction, verifies price, availability & active state)
     const { data: rpcResult, error: rpcError } = await supabase.rpc('create_order', {
       p_source: data.payment_method,
-      p_customer_name: data.customer_name,
-      p_customer_email: data.customer_email,
-      p_customer_phone: data.customer_phone,
-      p_delivery_address: data.delivery_address,
-      p_city: data.city,
-      p_district: data.district || '',
-      p_pincode: data.pincode || '',
-      p_delivery_notes: data.delivery_notes || '',
+      p_customer_name: data.customer_name.trim(),
+      p_customer_email: data.customer_email.trim().toLowerCase(),
+      p_customer_phone: data.customer_phone.trim(),
+      p_delivery_address: data.delivery_address.trim(),
+      p_city: data.city.trim() || 'Doha',
+      p_district: data.district ? data.district.trim() : '',
+      p_pincode: data.pincode ? data.pincode.trim() : '',
+      p_delivery_notes: data.delivery_notes ? data.delivery_notes.trim() : '',
       p_items: rpcItems,
       p_locale: data.locale || 'en',
     });
 
-    let createdOrder: Partial<Order>;
+    if (rpcError) {
+      console.error('[Order Action] Database create_order RPC error:', rpcError.message);
+      return {
+        success: false,
+        error: rpcError.message || 'Failed to place order in database.',
+      };
+    }
 
-    if (!rpcError && rpcResult) {
-      createdOrder = rpcResult;
-    } else {
-      // Fallback calculation if DB RPC is not yet executed on user's Supabase instance
-      const subtotal = cartItems.reduce((sum, item) => {
-        const prod = DEMO_PRODUCTS.find((p) => p.id === item.product.id) || item.product;
-        return sum + prod.price * item.quantity;
-      }, 0);
-      const shipping_fee = subtotal >= 300 ? 0 : 25;
-      const total_amount = subtotal + shipping_fee;
-      const order_number = `BURBLE-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-      createdOrder = {
-        id: `ord-${Date.now()}`,
-        order_number,
-        source: data.payment_method,
-        subtotal,
-        shipping_fee,
-        total_amount,
-        locale: data.locale || 'en',
+    if (!rpcResult || !rpcResult.id) {
+      return {
+        success: false,
+        error: 'Order could not be verified by the database.',
       };
     }
 
     const fullOrder: Order = {
-      id: createdOrder.id || `ord-${Date.now()}`,
-      order_number: createdOrder.order_number || 'BURBLE-OFFLINE',
+      id: rpcResult.id,
+      order_number: rpcResult.order_number,
       source: data.payment_method,
       customer_name: data.customer_name,
       customer_email: data.customer_email,
@@ -86,15 +76,16 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
       district: data.district,
       pincode: data.pincode,
       delivery_notes: data.delivery_notes,
-      subtotal: createdOrder.subtotal || 0,
-      shipping_fee: createdOrder.shipping_fee || 0,
-      total_amount: createdOrder.total_amount || 0,
+      subtotal: rpcResult.subtotal ?? 0,
+      shipping_fee: rpcResult.shipping_fee ?? 0,
+      total_amount: rpcResult.total_amount ?? 0,
       status: 'pending',
       email_sent: false,
       locale: (data.locale || 'en') as 'en' | 'ar',
       created_at: new Date().toISOString(),
       order_items: cartItems.map((item) => ({
         product_name: item.product.name,
+        product_name_ar: item.product.name_ar,
         price: item.product.price,
         quantity: item.quantity,
         total: item.product.price * item.quantity,
@@ -134,13 +125,11 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
             subject: `🚨 New COD Order #${fullOrder.order_number}`,
             htmlContent: adminHtml,
           });
-        } else {
-          console.warn('[Order Action] Admin notification email not configured in site_settings or ADMIN_NOTIFICATION_EMAIL. Skipping admin email dispatch.');
         }
       }
     } catch (emailErr) {
-      // Non-blocking requirement: Email failure should not corrupt or roll back valid order
-      console.error('Non-blocking Brevo email error:', emailErr);
+      // Non-blocking: Email delivery error does not disrupt order completion
+      console.error('[Order Action] Non-blocking email dispatch error:', emailErr);
     }
 
     return {
@@ -148,10 +137,156 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
       order: fullOrder,
     };
   } catch (error: any) {
-    console.error('Order checkout error:', error);
+    console.error('[Order Action] Unexpected checkout error:', error);
     return {
       success: false,
       error: error?.message || 'An unexpected error occurred while placing your order.',
+    };
+  }
+}
+
+export async function getAdminOrdersAction(): Promise<{ success: boolean; data?: Order[]; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    if (!url.includes('placeholder.supabase.co')) {
+      return { success: false, error: 'Unauthorized: Admin authentication required.' };
+    }
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('id, order_number, source, customer_name, customer_email, customer_phone, delivery_address, city, district, pincode, delivery_notes, subtotal, shipping_fee, total_amount, status, email_sent, locale, created_at, updated_at')
+      .order('created_at', { ascending: false });
+
+    if (ordersError) {
+      return { success: false, error: ordersError.message };
+    }
+
+    if (!orders || orders.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    // Fetch associated order_items
+    const orderIds = orders.map((o) => o.id);
+    const { data: items, error: itemsError } = await supabase
+      .from('order_items')
+      .select('id, order_id, product_id, product_name, product_name_ar, price, quantity, total')
+      .in('order_id', orderIds);
+
+    if (itemsError) {
+      console.warn('[Order Action] Warning fetching order_items:', itemsError.message);
+    }
+
+    const fullOrders: Order[] = orders.map((o) => ({
+      ...o,
+      order_items: (items || []).filter((it) => it.order_id === o.id),
+    }));
+
+    return { success: true, data: fullOrders };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to fetch orders from database.' };
+  }
+}
+
+export async function updateOrderStatusAction(orderId: string, status: OrderStatus): Promise<{ success: boolean; error?: string }> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    if (!url.includes('placeholder.supabase.co')) {
+      return { success: false, error: 'Unauthorized: Admin authentication required.' };
+    }
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('orders')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', orderId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin');
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to update order status.' };
+  }
+}
+
+export async function getAdminDashboardMetricsAction(): Promise<{
+  success: boolean;
+  totalSales: number;
+  ordersCount: number;
+  productsCount: number;
+  categoriesCount: number;
+  recentOrders: Order[];
+  error?: string;
+}> {
+  const isAdmin = await verifyAdminServer();
+  if (!isAdmin) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    if (!url.includes('placeholder.supabase.co')) {
+      return {
+        success: false,
+        totalSales: 0,
+        ordersCount: 0,
+        productsCount: 0,
+        categoriesCount: 0,
+        recentOrders: [],
+        error: 'Unauthorized: Admin authentication required.',
+      };
+    }
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // 1. Orders and sales
+    const { data: orders, error: ordersErr } = await supabase
+      .from('orders')
+      .select('id, order_number, source, customer_name, customer_email, customer_phone, delivery_address, city, subtotal, shipping_fee, total_amount, status, created_at')
+      .order('created_at', { ascending: false });
+
+    // 2. Products count
+    const { count: productsCount, error: prodErr } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('active', true);
+
+    // 3. Categories count
+    const { count: categoriesCount, error: catErr } = await supabase
+      .from('categories')
+      .select('id', { count: 'exact', head: true })
+      .eq('active', true);
+
+    const allOrders = orders || [];
+    const totalSales = allOrders.reduce((acc, curr) => acc + (Number(curr.total_amount) || 0), 0);
+    const recentOrders: Order[] = allOrders.slice(0, 5) as Order[];
+
+    return {
+      success: true,
+      totalSales,
+      ordersCount: allOrders.length,
+      productsCount: productsCount || 0,
+      categoriesCount: categoriesCount || 0,
+      recentOrders,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      totalSales: 0,
+      ordersCount: 0,
+      productsCount: 0,
+      categoriesCount: 0,
+      recentOrders: [],
+      error: err?.message || 'Failed to fetch dashboard metrics.',
     };
   }
 }

@@ -10,9 +10,16 @@ import { createWhatsAppOrderLink } from '@/lib/whatsapp/message';
 interface ProductDetailClientProps {
   product: Product;
   whatsappNumber: string;
+  freeShippingThreshold?: number;
+  flatShippingFee?: number;
 }
 
-export function ProductDetailClient({ product, whatsappNumber }: ProductDetailClientProps) {
+export function ProductDetailClient({
+  product,
+  whatsappNumber,
+  freeShippingThreshold = 300,
+  flatShippingFee = 25,
+}: ProductDetailClientProps) {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
@@ -25,6 +32,10 @@ export function ProductDetailClient({ product, whatsappNumber }: ProductDetailCl
   };
 
   const handleWhatsAppQuickOrder = () => {
+    const itemSubtotal = product.price * quantity;
+    const shipping = itemSubtotal >= freeShippingThreshold ? 0 : flatShippingFee;
+    const total = itemSubtotal + shipping;
+
     const waUrl = createWhatsAppOrderLink({
       whatsappNumber,
       orderNumber: `QUICK-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -37,9 +48,9 @@ export function ProductDetailClient({ product, whatsappNumber }: ProductDetailCl
         payment_method: 'whatsapp',
       },
       items: [{ product, quantity }],
-      subtotal: product.price * quantity,
-      shippingFee: product.price * quantity >= 300 ? 0 : 25,
-      totalAmount: (product.price * quantity) + (product.price * quantity >= 300 ? 0 : 25),
+      subtotal: itemSubtotal,
+      shippingFee: shipping,
+      totalAmount: total,
       locale,
     });
 

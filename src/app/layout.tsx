@@ -39,14 +39,6 @@ export const metadata: Metadata = {
     description: 'Fresh handcrafted bouquets for your special moments. Express same-day delivery across Qatar.',
     url: 'https://burbleflowers.com',
     siteName: 'Burble Flowers',
-    images: [
-      {
-        url: '/demo-media/hero_desktop.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Burble Luxury Flower Shop Qatar',
-      },
-    ],
     locale: 'en_US',
     alternateLocale: ['ar_QA'],
     type: 'website',
@@ -55,7 +47,6 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Burble Flowers Qatar | زهور بيربل قطر',
     description: 'Handcrafted fresh floral arrangements delivered across Qatar.',
-    images: ['/demo-media/hero_desktop.jpg'],
   },
 };
 

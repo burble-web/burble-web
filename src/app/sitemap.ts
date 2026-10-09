@@ -1,12 +1,14 @@
 import { MetadataRoute } from 'next';
-import { DEMO_PRODUCTS } from '@/lib/data/storefront';
+import { getProducts } from '@/lib/data/queries';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://burbleflowers.com';
 
-  const productUrls: MetadataRoute.Sitemap = DEMO_PRODUCTS.map((p) => ({
+  const products = await getProducts();
+
+  const productUrls: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${baseUrl}/products/${p.slug}`,
-    lastModified: new Date(p.updated_at),
+    lastModified: new Date(p.updated_at || p.created_at || new Date()),
     changeFrequency: 'weekly',
     priority: 0.8,
     alternates: {
@@ -57,4 +59,3 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...productUrls,
   ];
 }
-

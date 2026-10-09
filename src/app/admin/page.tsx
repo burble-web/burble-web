@@ -1,22 +1,17 @@
 import React from 'react';
 import Link from 'next/link';
-import { Package, ShoppingBag, FolderTree, ArrowRight, ArrowLeft, DollarSign, MessageSquare, Banknote } from 'lucide-react';
-import { DEMO_PRODUCTS, DEMO_CATEGORIES } from '@/lib/data/storefront';
+import { Package, ShoppingBag, FolderTree, ArrowRight, ArrowLeft, DollarSign, MessageSquare, Banknote, Clock } from 'lucide-react';
 import { getServerTranslations } from '@/lib/i18n/server';
-import { formatPrice } from '@/lib/i18n/utils';
-
-const RECENT_DEMO_ORDERS = [
-  { id: '1', number: 'BURBLE-20261007-4819', name: 'Fatima Al-Thani', source: 'whatsapp', total: 580.00, status: 'confirmed', date: 'Just now', dateAr: 'الآن' },
-  { id: '2', number: 'BURBLE-20261007-9102', name: 'Rashid Mansoor', source: 'cod', total: 320.00, status: 'pending', date: '25 mins ago', dateAr: 'منذ 25 دقيقة' },
-  { id: '3', number: 'BURBLE-20261007-1283', name: 'Aisha K.', source: 'whatsapp', total: 290.00, status: 'delivered', date: '2 hours ago', dateAr: 'منذ ساعتين' },
-  { id: '4', number: 'BURBLE-20261007-7731', name: 'Mohammed H.', source: 'cod', total: 350.00, status: 'out_for_delivery', date: '5 hours ago', dateAr: 'منذ 5 ساعات' },
-];
+import { formatPrice, formatDate } from '@/lib/i18n/utils';
+import { getAdminDashboardMetricsAction } from '@/app/actions/order';
 
 export const instant = false;
 
 export default async function AdminDashboardPage() {
   const { locale, direction, t } = await getServerTranslations();
   const isAr = locale === 'ar';
+
+  const metrics = await getAdminDashboardMetricsAction();
 
   return (
     <div className="space-y-8">
@@ -35,7 +30,9 @@ export default async function AdminDashboardPage() {
           </div>
           <div>
             <p className="text-xs text-ink-500 font-medium">{t.admin.totalSales}</p>
-            <h3 className="font-serif text-2xl font-bold text-plum-900">{formatPrice(1540, locale, 'QAR')}</h3>
+            <h3 className="font-serif text-2xl font-bold text-plum-900">
+              {formatPrice(metrics.totalSales, locale, 'QAR')}
+            </h3>
           </div>
         </div>
 
@@ -45,7 +42,9 @@ export default async function AdminDashboardPage() {
           </div>
           <div>
             <p className="text-xs text-ink-500 font-medium">{t.admin.ordersCount}</p>
-            <h3 className="font-serif text-2xl font-bold text-plum-900">{isAr ? '4 طلبات' : '4 Orders'}</h3>
+            <h3 className="font-serif text-2xl font-bold text-plum-900">
+              {isAr ? `${metrics.ordersCount} طلبات` : `${metrics.ordersCount} Orders`}
+            </h3>
           </div>
         </div>
 
@@ -55,7 +54,9 @@ export default async function AdminDashboardPage() {
           </div>
           <div>
             <p className="text-xs text-ink-500 font-medium">{t.admin.activeProducts}</p>
-            <h3 className="font-serif text-2xl font-bold text-plum-900">{DEMO_PRODUCTS.length}</h3>
+            <h3 className="font-serif text-2xl font-bold text-plum-900">
+              {metrics.productsCount}
+            </h3>
           </div>
         </div>
 
@@ -65,7 +66,9 @@ export default async function AdminDashboardPage() {
           </div>
           <div>
             <p className="text-xs text-ink-500 font-medium">{t.admin.categoriesCount}</p>
-            <h3 className="font-serif text-2xl font-bold text-plum-900">{DEMO_CATEGORIES.length}</h3>
+            <h3 className="font-serif text-2xl font-bold text-plum-900">
+              {metrics.categoriesCount}
+            </h3>
           </div>
         </div>
 
@@ -81,50 +84,67 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-start border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4">Order Ref</th>
-                <th className="py-3 px-4">Customer</th>
-                <th className="py-3 px-4">Source</th>
-                <th className="py-3 px-4">Total</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100">
-              {RECENT_DEMO_ORDERS.map((order) => (
-                <tr key={order.id} className="hover:bg-cream-50 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-plum-900">#{order.number}</td>
-                  <td className="py-3.5 px-4 font-medium text-ink-900">{order.name}</td>
-                  <td className="py-3.5 px-4">
-                    {order.source === 'whatsapp' ? (
-                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
-                        <MessageSquare className="w-3 h-3 text-emerald-600 fill-current" />
-                        <span>WHATSAPP</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 bg-plum-50 text-plum-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-200">
-                        <Banknote className="w-3 h-3 text-plum-800" />
-                        <span>COD</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 font-bold text-plum-900">{formatPrice(order.total, locale, 'QAR')}</td>
-                  <td className="py-3.5 px-4">
-                    <span className="inline-block bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-amber-200 uppercase">
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-ink-500">{isAr ? order.dateAr : order.date}</td>
+        {metrics.recentOrders.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-ink-200 rounded-2xl">
+            <ShoppingBag className="w-10 h-10 text-ink-300 mx-auto mb-2 stroke-[1.5]" />
+            <p className="text-sm font-semibold text-plum-900">
+              {isAr ? 'لا توجد طلبات مسجلة حتى الآن' : 'No orders recorded yet'}
+            </p>
+            <p className="text-xs text-ink-500 mt-1">
+              {isAr ? 'ستظهر الطلبات الجديدة هنا فور قيام العملاء بالشراء.' : 'New customer orders will appear here in real time.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-start border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
+                  <th className="py-3 px-4">Order Ref</th>
+                  <th className="py-3 px-4">Customer</th>
+                  <th className="py-3 px-4">Source</th>
+                  <th className="py-3 px-4">Total</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {metrics.recentOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-cream-50 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-plum-900">#{order.order_number}</td>
+                    <td className="py-3.5 px-4 font-medium text-ink-900">{order.customer_name}</td>
+                    <td className="py-3.5 px-4">
+                      {order.source === 'whatsapp' ? (
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
+                          <MessageSquare className="w-3 h-3 text-emerald-600 fill-current" />
+                          <span>WHATSAPP</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-plum-50 text-plum-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-200">
+                          <Banknote className="w-3 h-3 text-plum-800" />
+                          <span>COD</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 font-bold text-plum-900">{formatPrice(order.total_amount, locale, 'QAR')}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                        order.status === 'delivered' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                        order.status === 'cancelled' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                        'bg-amber-50 text-amber-800 border-amber-200'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-ink-500">
+                      {formatDate(order.created_at, locale)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

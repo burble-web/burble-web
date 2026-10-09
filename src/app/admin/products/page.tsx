@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Loader2, Image as ImageIcon, Sparkles, Globe } from 'lucide-react';
 import { Product, Category } from '@/types';
-import { DEMO_PRODUCTS, DEMO_CATEGORIES } from '@/lib/data/storefront';
 import {
   getAdminProductsAction,
   saveProductAction,
@@ -18,7 +17,7 @@ import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>(DEMO_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -37,16 +36,16 @@ export default function AdminProductsPage() {
     const prodRes = await getAdminProductsAction();
     const catRes = await getAdminCategoriesAction();
 
-    if (catRes.success && catRes.data && catRes.data.length > 0) {
+    if (catRes.success && catRes.data) {
       setCategories(catRes.data);
     } else {
-      setCategories(DEMO_CATEGORIES);
+      setCategories([]);
     }
 
-    if (prodRes.success && prodRes.data && prodRes.data.length > 0) {
+    if (prodRes.success && prodRes.data) {
       setProducts(prodRes.data);
     } else {
-      setProducts(DEMO_PRODUCTS);
+      setProducts([]);
     }
     setLoading(false);
   };
@@ -81,7 +80,7 @@ export default function AdminProductsPage() {
       is_new_arrival: true,
       stock_status: 'in_stock',
       active: true,
-      main_image_url: '/demo-media/product_blush_bouquet.jpg',
+      main_image_url: '',
       hover_image_url: null,
       sort_order: 1,
     });

@@ -2,37 +2,33 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Upload, Copy, Check, Loader2 } from 'lucide-react';
+import { Upload, Copy, Check, Loader2, Image as ImageIcon } from 'lucide-react';
 import { uploadMediaAssetAction, getMediaAssetsAction, MediaAssetRecord } from '@/app/actions/media';
 
-const INITIAL_MEDIA = [
-  { id: '1', name: 'hero_desktop.jpg', url: '/demo-media/hero_desktop.jpg' },
-  { id: '2', name: 'hero_mobile_v2.jpg', url: '/demo-media/hero_mobile_v2.jpg' },
-  { id: '3', name: 'product_blush_bouquet.jpg', url: '/demo-media/product_blush_bouquet.jpg' },
-  { id: '4', name: 'product_red_roses.jpg', url: '/demo-media/product_red_roses.jpg' },
-  { id: '5', name: 'product_pastel_bouquet.jpg', url: '/demo-media/product_pastel_bouquet.jpg' },
-  { id: '6', name: 'premium_banner.jpg', url: '/demo-media/premium_banner.jpg' },
-  { id: '7', name: 'delivery_banner.jpg', url: '/demo-media/delivery_banner.jpg' },
-];
-
 export default function AdminMediaPage() {
-  const [mediaList, setMediaList] = useState<{ id: string; name: string; url: string }[]>(INITIAL_MEDIA);
+  const [mediaList, setMediaList] = useState<{ id: string; name: string; url: string }[]>([]);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadAssets() {
-      const dbAssets = await getMediaAssetsAction();
-      if (dbAssets && dbAssets.length > 0) {
-        const formatted = dbAssets.map((a: MediaAssetRecord) => ({
-          id: a.id,
-          name: a.alt_text || a.public_id || 'Cloudinary Media Asset',
-          url: a.url,
-        }));
-        setMediaList(formatted);
-      }
+  const loadAssets = async () => {
+    setLoading(true);
+    const dbAssets = await getMediaAssetsAction();
+    if (dbAssets && dbAssets.length > 0) {
+      const formatted = dbAssets.map((a: MediaAssetRecord) => ({
+        id: a.id,
+        name: a.alt_text || a.public_id || 'Cloudinary Media Asset',
+        url: a.url,
+      }));
+      setMediaList(formatted);
+    } else {
+      setMediaList([]);
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     loadAssets();
   }, []);
 
@@ -92,41 +88,56 @@ export default function AdminMediaPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {mediaList.map((item) => (
-          <div
-            key={item.id}
-            className="group bg-white rounded-2xl p-3 border border-ink-100 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
-          >
-            <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-cream-200 mb-3">
-              <Image src={item.url} alt={item.name} fill className="object-cover" />
-            </div>
+      {loading ? (
+        <div className="py-20 text-center flex flex-col items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-plum-800 mb-2" />
+          <span className="text-xs text-ink-500">Loading Cloudinary media assets...</span>
+        </div>
+      ) : mediaList.length === 0 ? (
+        <div className="py-20 text-center border border-dashed border-ink-200 rounded-3xl bg-white p-8">
+          <ImageIcon className="w-12 h-12 text-ink-300 mx-auto mb-3 stroke-[1.5]" />
+          <h3 className="font-serif text-lg font-bold text-plum-900">No Media Assets Found</h3>
+          <p className="text-xs text-ink-500 mt-1 max-w-sm mx-auto">
+            Upload images using the button above to store and optimize them directly in Cloudinary.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {mediaList.map((item) => (
+            <div
+              key={item.id}
+              className="group bg-white rounded-2xl p-3 border border-ink-100 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+            >
+              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-cream-200 mb-3">
+                <Image src={item.url} alt={item.name} fill className="object-cover" />
+              </div>
 
-            <div>
-              <p className="text-xs font-semibold text-plum-900 truncate" title={item.name}>
-                {item.name}
-              </p>
+              <div>
+                <p className="text-xs font-semibold text-plum-900 truncate" title={item.name}>
+                  {item.name}
+                </p>
 
-              <button
-                onClick={() => handleCopyUrl(item.url, item.id)}
-                className="w-full mt-2 py-1.5 px-2 bg-cream-100 hover:bg-plum-50 text-plum-900 rounded-lg text-[11px] font-semibold flex items-center justify-center space-x-1 transition-colors border border-ink-100"
-              >
-                {copiedId === item.id ? (
-                  <>
-                    <Check className="w-3 h-3 text-emerald-600" />
-                    <span className="text-emerald-700">URL Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3 text-plum-700" />
-                    <span>Copy Media URL</span>
-                  </>
-                )}
-              </button>
+                <button
+                  onClick={() => handleCopyUrl(item.url, item.id)}
+                  className="w-full mt-2 py-1.5 px-2 bg-cream-100 hover:bg-plum-50 text-plum-900 rounded-lg text-[11px] font-semibold flex items-center justify-center space-x-1 transition-colors border border-ink-100"
+                >
+                  {copiedId === item.id ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span className="text-emerald-700">URL Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-plum-700" />
+                      <span>Copy Media URL</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

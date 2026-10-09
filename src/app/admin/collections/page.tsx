@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon, Sparkles, Layers } from 'lucide-react';
 import { Collection, Product } from '@/types';
-import { DEMO_OCCASIONS, DEMO_PRODUCTS } from '@/lib/data/storefront';
 import {
   getAdminCollectionsAction,
   saveCollectionAction,
@@ -17,7 +16,7 @@ import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminCollectionsPage() {
   const [collections, setCollections] = useState<(Collection & { product_ids?: string[] })[]>([]);
-  const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -32,14 +31,16 @@ export default function AdminCollectionsPage() {
     const colRes = await getAdminCollectionsAction();
     const prodRes = await getAdminProductsAction();
 
-    if (prodRes.success && prodRes.data && prodRes.data.length > 0) {
+    if (prodRes.success && prodRes.data) {
       setProducts(prodRes.data);
+    } else {
+      setProducts([]);
     }
 
-    if (colRes.success && colRes.data && colRes.data.length > 0) {
+    if (colRes.success && colRes.data) {
       setCollections(colRes.data);
     } else {
-      setCollections(DEMO_OCCASIONS);
+      setCollections([]);
     }
     setLoading(false);
   };
@@ -140,7 +141,7 @@ export default function AdminCollectionsPage() {
               subtitle: '',
               subtitle_ar: '',
               type: 'occasion',
-              image_url: '/demo-media/product_blush_bouquet.jpg',
+              image_url: '',
               sort_order: collections.length + 1,
               active: true,
               product_ids: [],
@@ -172,6 +173,12 @@ export default function AdminCollectionsPage() {
             <Loader2 className="w-6 h-6 animate-spin mb-2" />
             <span className="text-xs font-medium">Loading collections...</span>
           </div>
+        ) : collections.length === 0 ? (
+          <div className="py-16 text-center border border-dashed border-ink-200 rounded-2xl">
+            <Layers className="w-12 h-12 text-ink-300 mx-auto mb-3 stroke-[1.5]" />
+            <p className="font-serif text-lg font-bold text-plum-900">No Collections Found</p>
+            <p className="text-xs text-ink-500 mt-1">Create your first occasion, flower type, or collection above.</p>
+          </div>
         ) : (
           <table className="w-full text-start border-collapse text-xs">
             <thead>
@@ -188,13 +195,17 @@ export default function AdminCollectionsPage() {
                 <tr key={col.id} className="hover:bg-cream-50 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-plum-900">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
-                        <Image
-                          src={col.image_url || '/demo-media/product_blush_bouquet.jpg'}
-                          alt={col.title}
-                          fill
-                          className="object-cover"
-                        />
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100 flex items-center justify-center">
+                        {col.image_url ? (
+                          <Image
+                            src={col.image_url}
+                            alt={col.title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <Layers className="w-4 h-4 text-plum-400" />
+                        )}
                       </div>
                       <div>
                         <p>{col.title}</p>

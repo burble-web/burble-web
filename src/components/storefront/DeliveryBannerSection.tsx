@@ -3,10 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Flower2, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, Flower2, ShieldCheck, MapPin, Sparkles, Clock, Truck } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
 
-export function DeliveryBannerSection() {
+interface DeliveryBannerSectionProps {
+  bannerImageUrl?: string | null;
+}
+
+export function DeliveryBannerSection({ bannerImageUrl }: DeliveryBannerSectionProps) {
   const { t, isRtl } = useLocale();
 
   return (
@@ -14,6 +18,10 @@ export function DeliveryBannerSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative bg-plum-900 text-white rounded-3xl p-8 sm:p-12 overflow-hidden shadow-xl border border-plum-800">
           
+          {/* Subtle background ambient gradients */}
+          <div className="absolute top-0 end-0 w-96 h-96 bg-blush-400/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 start-0 w-96 h-96 bg-plum-700/30 rounded-full blur-3xl pointer-events-none" />
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             
             {/* Left Content */}
@@ -62,14 +70,35 @@ export function DeliveryBannerSection() {
               </div>
             </div>
 
-            {/* Right Bouquet Image Graphic */}
-            <div className="lg:col-span-5 relative h-64 sm:h-80 rounded-2xl overflow-hidden shadow-2xl border border-plum-700/50">
-              <Image
-                src="/demo-media/delivery_banner.jpg"
-                alt={t.sections.deliveryBannerTitle}
-                fill
-                className="object-cover"
-              />
+            {/* Right Graphic Card */}
+            <div className="lg:col-span-5 relative h-64 sm:h-80 rounded-2xl overflow-hidden shadow-2xl border border-plum-700/50 bg-plum-950 flex flex-col items-center justify-center p-6 text-center group">
+              {bannerImageUrl ? (
+                <>
+                  <Image
+                    src={bannerImageUrl}
+                    alt={t.sections.deliveryBannerTitle}
+                    fill
+                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-plum-950/40 via-transparent to-transparent pointer-events-none" />
+                </>
+              ) : (
+                <div className="space-y-4 max-w-xs">
+                  <div className="w-16 h-16 rounded-2xl bg-plum-800/80 border border-plum-700 flex items-center justify-center mx-auto text-blush-200 shadow-lg">
+                    <Truck className="w-8 h-8 stroke-[1.5]" />
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-white">
+                    {t.announcement.sameDay}
+                  </h3>
+                  <p className="text-xs text-plum-200 font-light leading-relaxed">
+                    {t.features.sourcedDaily} • {t.features.wrapped}
+                  </p>
+                  <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-3 py-1 rounded-full">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Express 2-4 Hours in Doha</span>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>

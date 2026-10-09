@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { BlogPost } from '@/types';
-import { DEMO_BLOG_POSTS } from '@/lib/data/storefront';
 import {
   getAdminBlogPostsAction,
   saveBlogPostAction,
@@ -28,10 +27,10 @@ export default function AdminBlogPage() {
   const loadPosts = async () => {
     setLoading(true);
     const res = await getAdminBlogPostsAction();
-    if (res.success && res.data && res.data.length > 0) {
+    if (res.success && res.data) {
       setPosts(res.data);
     } else {
-      setPosts(DEMO_BLOG_POSTS);
+      setPosts([]);
     }
     setLoading(false);
   };
@@ -134,7 +133,7 @@ export default function AdminBlogPage() {
               excerpt_ar: '',
               content: '',
               content_ar: '',
-              cover_image: '/demo-media/product_blush_bouquet.jpg',
+              cover_image: '',
               author: 'Burble Florist',
               is_published: true,
             });
@@ -180,13 +179,17 @@ export default function AdminBlogPage() {
                 <tr key={post.id} className="hover:bg-cream-50 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-plum-900">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
-                        <Image
-                          src={post.cover_image || '/demo-media/product_blush_bouquet.jpg'}
-                          alt={post.title}
-                          fill
-                          className="object-cover"
-                        />
+                      <div className="relative w-12 h-10 rounded-lg overflow-hidden bg-cream-200 shrink-0 border border-ink-100 flex items-center justify-center">
+                        {post.cover_image ? (
+                          <Image
+                            src={post.cover_image}
+                            alt={post.title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="w-4 h-4 text-ink-300" />
+                        )}
                       </div>
                       <div>
                         <p>{post.title}</p>
