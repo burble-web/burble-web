@@ -110,13 +110,13 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
           {loading ? (
             <div className="py-12 text-center flex flex-col items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-plum-800 mb-2" />
-              <span className="text-xs text-ink-500">Loading media library...</span>
+              <span className="text-xs text-ink-500 font-medium">Loading media library...</span>
             </div>
           ) : mediaList.length === 0 ? (
             <div className="py-12 text-center border border-dashed border-ink-200 rounded-2xl">
-              <ImageIcon className="w-10 h-10 text-ink-300 mx-auto mb-2" />
-              <p className="text-xs font-semibold text-plum-900">No media assets in library</p>
-              <p className="text-[11px] text-ink-500 mt-0.5">Upload images above to add them to your Cloudinary storage.</p>
+              <ImageIcon className="w-10 h-10 text-ink-400 mx-auto mb-2" />
+              <p className="text-xs font-bold text-plum-950">No media assets in library</p>
+              <p className="text-[11px] text-ink-600 mt-0.5 font-medium">Upload images above to add them to your Cloudinary storage.</p>
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -127,7 +127,7 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
                     key={item.id}
                     onClick={() => setSelectedUrl(item.url)}
                     className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all ${
-                      isSelected ? 'border-plum-800 ring-2 ring-plum-800/30 shadow-md' : 'border-ink-100 hover:border-plum-300'
+                      isSelected ? 'border-plum-800 ring-2 ring-plum-800/30 shadow-md' : 'border-ink-200 hover:border-plum-400'
                     }`}
                   >
                     <Image src={item.url} alt={item.name} fill className="object-cover" />
@@ -147,13 +147,13 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
 
         {/* Footer */}
         <div className="pt-4 border-t border-ink-100 flex items-center justify-between">
-          <span className="text-xs text-ink-500 truncate max-w-xs">
+          <span className="text-xs text-ink-600 font-medium truncate max-w-xs">
             {selectedUrl ? `Selected: ${selectedUrl.split('/').pop()}` : 'No image selected'}
           </span>
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-ink-200 text-ink-700 text-xs font-semibold hover:bg-cream-100"
+              className="px-4 py-2 rounded-xl border border-ink-200 text-ink-800 text-xs font-semibold hover:bg-cream-100"
             >
               Cancel
             </button>

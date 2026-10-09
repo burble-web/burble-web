@@ -127,6 +127,7 @@ export const ar: Translations = {
     featured: 'مميز',
     addToCart: 'إضافة إلى السلة',
     addedToCart: 'تمت الإضافة بنجاح!',
+    buyNow: 'اشتري الآن',
     orderWhatsApp: 'طلب سريع ومباشر عبر واتساب',
     inStockReadyExpress: 'متوفر في المخزون — جاهز للتوصيل السريع في نفس اليوم بقطر',
     descriptionHeading: 'تفاصيل التنسيق',
@@ -237,6 +238,10 @@ export const ar: Translations = {
     orderSuccessSubtitle: 'تم تسجيل طلبك وجاري تجهيز باقات الزهور بعناية تامة وتنسيق فائق.',
     orderNumberLabel: 'رقم الطلب المرجعي',
     backToHome: 'العودة إلى الصفحة الرئيسية',
+    continueShopping: 'متابعة التسوق',
+    continueToWhatsApp: 'المتابعة إلى محادثة واتساب',
+    whatsappSuccessNote: 'تم تجهيز محادثة واتساب. يرجى إرسال الرسالة الجاهزة لمنسق الزهور لدينا لتأكيد موعد وتفاصيل التوصيل.',
+    codSuccessNote: 'تم استلام طلبك بنجاح وسنقوم بتوصيل باقتك الطازجة والدفع نقداً أو بالبطاقة عند الاستلام في دولة قطر.',
     emptyCartError: 'سلة المشتريات فارغة. يُرجى إضافة منتجات قبل إتمام الطلب.',
   },
 

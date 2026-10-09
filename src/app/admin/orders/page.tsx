@@ -89,40 +89,46 @@ export default function AdminOrdersPage() {
       )}
 
       {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-ink-100 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+      <div className="bg-white p-4 rounded-2xl border border-ink-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500" />
           <input
             type="text"
             placeholder="Search by order #, name or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-cream-50 border border-ink-100 rounded-xl ps-9 pe-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+            className="w-full bg-cream-50 border border-ink-200 rounded-xl ps-9 pe-4 py-2 text-xs text-ink-950 font-medium placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/30 focus:border-plum-800"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-          <Filter className="w-4 h-4 text-ink-400 shrink-0" />
+          <Filter className="w-4 h-4 text-ink-500 shrink-0" />
           <button
             onClick={() => setSourceFilter('all')}
-            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-colors ${
-              sourceFilter === 'all' ? 'bg-plum-900 text-white' : 'bg-cream-100 text-ink-700 hover:bg-cream-200'
+            className={`px-3.5 py-1.5 rounded-xl font-bold shrink-0 transition-colors ${
+              sourceFilter === 'all'
+                ? 'bg-plum-900 text-white shadow-xs'
+                : 'bg-cream-100 text-ink-800 hover:bg-cream-200 border border-ink-200'
             }`}
           >
             All Sources ({orders.length})
           </button>
           <button
             onClick={() => setSourceFilter('whatsapp')}
-            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-colors ${
-              sourceFilter === 'whatsapp' ? 'bg-emerald-700 text-white' : 'bg-cream-100 text-ink-700 hover:bg-cream-200'
+            className={`px-3.5 py-1.5 rounded-xl font-bold shrink-0 transition-colors ${
+              sourceFilter === 'whatsapp'
+                ? 'bg-emerald-800 text-white shadow-xs'
+                : 'bg-cream-100 text-emerald-950 hover:bg-emerald-50 border border-emerald-300'
             }`}
           >
             WhatsApp ({orders.filter((o) => o.source === 'whatsapp').length})
           </button>
           <button
             onClick={() => setSourceFilter('cod')}
-            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-colors ${
-              sourceFilter === 'cod' ? 'bg-plum-900 text-white' : 'bg-cream-100 text-ink-700 hover:bg-cream-200'
+            className={`px-3.5 py-1.5 rounded-xl font-bold shrink-0 transition-colors ${
+              sourceFilter === 'cod'
+                ? 'bg-plum-900 text-white shadow-xs'
+                : 'bg-cream-100 text-plum-950 hover:bg-plum-50 border border-plum-300'
             }`}
           >
             Cash on Delivery ({orders.filter((o) => o.source === 'cod').length})
@@ -131,27 +137,27 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-3xl p-6 border border-ink-100 shadow-xs">
+      <div className="bg-white rounded-3xl p-6 border border-ink-200/80 shadow-xs">
         {loading ? (
-          <div className="py-16 text-center text-ink-400 flex flex-col items-center justify-center">
+          <div className="py-16 text-center text-ink-500 flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-plum-800 mb-2" />
-            <span className="text-xs">Loading customer orders from database...</span>
+            <span className="text-xs font-medium">Loading customer orders from database...</span>
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="py-16 text-center border border-dashed border-ink-200 rounded-2xl">
-            <ShoppingBag className="w-12 h-12 text-ink-300 mx-auto mb-3 stroke-[1.5]" />
-            <p className="font-serif text-lg font-bold text-plum-900">No Orders Found</p>
-            <p className="text-xs text-ink-500 mt-1 max-w-sm mx-auto">
+            <ShoppingBag className="w-12 h-12 text-ink-400 mx-auto mb-3 stroke-[1.5]" />
+            <p className="font-serif text-lg font-bold text-plum-950">No Orders Found</p>
+            <p className="text-xs text-ink-600 font-medium mt-1 max-w-sm mx-auto">
               {searchQuery || sourceFilter !== 'all'
                 ? 'Try adjusting your search criteria or filter options.'
                 : 'Customer orders placed via WhatsApp or COD will appear here in real time.'}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-ink-100">
             <table className="w-full text-start border-collapse text-xs">
               <thead>
-                <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider text-[11px]">
+                <tr className="bg-cream-100/90 border-b border-ink-200 text-ink-800 font-bold uppercase tracking-wider text-[11px]">
                   <th className="py-3 px-4">Order #</th>
                   <th className="py-3 px-4">Customer</th>
                   <th className="py-3 px-4">Items Summary</th>
@@ -164,21 +170,21 @@ export default function AdminOrdersPage() {
               <tbody className="divide-y divide-ink-100">
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-cream-50/80 transition-colors">
-                    <td className="py-4 px-4 font-mono font-bold text-plum-900 whitespace-nowrap">
+                    <td className="py-4 px-4 font-mono font-bold text-plum-950 whitespace-nowrap">
                       #{order.order_number}
                     </td>
                     <td className="py-4 px-4">
-                      <div className="font-semibold text-ink-900">{order.customer_name}</div>
-                      <div className="text-[11px] text-ink-500">{order.customer_phone}</div>
-                      <div className="text-[11px] text-ink-400 truncate max-w-xs">{order.delivery_address}, {order.city}</div>
+                      <div className="font-bold text-ink-950 text-xs">{order.customer_name}</div>
+                      <div className="text-[11px] text-ink-600 font-medium">{order.customer_phone}</div>
+                      <div className="text-[11px] text-ink-500 truncate max-w-xs">{order.delivery_address}, {order.city}</div>
                     </td>
                     <td className="py-4 px-4">
                       {order.order_items && order.order_items.length > 0 ? (
                         <div className="space-y-1 max-w-xs">
                           {order.order_items.map((item, idx) => (
-                            <div key={idx} className="text-[11px] text-ink-700 flex justify-between">
+                            <div key={idx} className="text-xs text-ink-800 flex justify-between font-medium">
                               <span className="truncate">{item.product_name} × {item.quantity}</span>
-                              <span className="font-medium ms-2">{formatPrice(item.total)}</span>
+                              <span className="font-bold ms-2 text-plum-950">{formatPrice(item.total)}</span>
                             </div>
                           ))}
                         </div>
@@ -188,19 +194,19 @@ export default function AdminOrdersPage() {
                     </td>
                     <td className="py-4 px-4 whitespace-nowrap">
                       {order.source === 'whatsapp' ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
-                          <MessageSquare className="w-3 h-3 text-emerald-600 fill-current" />
+                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-950 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-300">
+                          <MessageSquare className="w-3 h-3 text-emerald-700 fill-current" />
                           <span>WHATSAPP</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 bg-plum-50 text-plum-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-200">
+                        <span className="inline-flex items-center gap-1 bg-plum-100 text-plum-950 px-2.5 py-1 rounded-full text-[10px] font-bold border border-plum-300">
                           <Banknote className="w-3 h-3 text-plum-800" />
                           <span>COD</span>
                         </span>
                       )}
                     </td>
                     <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="font-bold text-plum-900 text-sm">
+                      <span className="font-bold text-plum-950 text-sm">
                         {formatPrice(order.total_amount)}
                       </span>
                     </td>
@@ -209,11 +215,11 @@ export default function AdminOrdersPage() {
                         value={order.status}
                         disabled={updatingId === order.id}
                         onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                        className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg border focus:outline-none cursor-pointer ${
-                          order.status === 'delivered' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                          order.status === 'cancelled' ? 'bg-rose-50 text-rose-800 border-rose-300' :
-                          order.status === 'out_for_delivery' ? 'bg-indigo-50 text-indigo-800 border-indigo-300' :
-                          'bg-amber-50 text-amber-800 border-amber-300'
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border shadow-xs focus:outline-none cursor-pointer ${
+                          order.status === 'delivered' ? 'bg-emerald-100 text-emerald-950 border-emerald-300' :
+                          order.status === 'cancelled' ? 'bg-rose-100 text-rose-950 border-rose-300' :
+                          order.status === 'out_for_delivery' ? 'bg-indigo-100 text-indigo-950 border-indigo-300' :
+                          'bg-amber-100 text-amber-950 border-amber-300'
                         }`}
                       >
                         {ORDER_STATUSES.map((st) => (
@@ -223,7 +229,7 @@ export default function AdminOrdersPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="py-4 px-4 whitespace-nowrap text-ink-500 text-[11px]">
+                    <td className="py-4 px-4 whitespace-nowrap text-ink-700 font-medium text-[11px]">
                       {new Date(order.created_at).toLocaleDateString(locale === 'ar' ? 'ar-QA' : 'en-US', {
                         year: 'numeric',
                         month: 'short',

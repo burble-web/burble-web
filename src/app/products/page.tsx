@@ -3,7 +3,7 @@ import { AnnouncementBar } from '@/components/storefront/AnnouncementBar';
 import { Header } from '@/components/storefront/Header';
 import { Footer } from '@/components/storefront/Footer';
 import { ProductCard } from '@/components/storefront/ProductCard';
-import { getSiteSettings, getProducts, getCategories } from '@/lib/data/queries';
+import { getSiteSettings, getProducts, getCategories, getCollectionBySlug } from '@/lib/data/queries';
 import { getServerTranslations } from '@/lib/i18n/server';
 import { getLocalizedValue } from '@/lib/i18n/utils';
 import Link from 'next/link';
@@ -13,26 +13,52 @@ export const instant = false;
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; sort?: string; q?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    occasion?: string;
+    flower?: string;
+    collection?: string;
+    sort?: string;
+    q?: string;
+  }>;
 }) {
   const resolvedParams = await searchParams;
   const { t, locale } = await getServerTranslations();
   const settings = await getSiteSettings();
   const categories = await getCategories();
-  let products = await getProducts();
 
-  // Filter by category slug if provided
-  let currentCategoryName = t.product.allFlowers;
+  let currentTitle = t.product.allFlowers;
+  let products = await getProducts({
+    categorySlug: resolvedParams?.category,
+    occasionSlug: resolvedParams?.occasion,
+    flowerSlug: resolvedParams?.flower,
+    collectionSlug: resolvedParams?.collection,
+  });
+
+  // Determine page title based on filter
   if (resolvedParams?.category) {
     const matchedCategory = categories.find((c) => c.slug === resolvedParams.category);
     if (matchedCategory) {
-      products = products.filter((p) => p.category_id === matchedCategory.id);
-      currentCategoryName = getLocalizedValue({
+      currentTitle = getLocalizedValue({
         locale,
         english: matchedCategory.name,
         arabic: matchedCategory.name_ar,
       });
     }
+  } else if (resolvedParams?.occasion || resolvedParams?.flower || resolvedParams?.collection) {
+    const colSlug = resolvedParams?.occasion || resolvedParams?.flower || resolvedParams?.collection;
+    if (colSlug) {
+      const col = await getCollectionBySlug(colSlug);
+      if (col) {
+        currentTitle = getLocalizedValue({
+          locale,
+          english: col.title,
+          arabic: col.title_ar,
+        });
+      }
+    }
+  } else if (resolvedParams?.q) {
+    currentTitle = locale === 'ar' ? `نتائج البحث: "${resolvedParams.q}"` : `Search: "${resolvedParams.q}"`;
   }
 
   // Filter by search query if provided (supporting both English and Arabic query matching)
@@ -59,6 +85,14 @@ export default async function ProductsPage({
     products.sort((a, b) => b.price - a.price);
   }
 
+  const hasActiveFilter = Boolean(
+    resolvedParams?.category ||
+    resolvedParams?.occasion ||
+    resolvedParams?.flower ||
+    resolvedParams?.collection ||
+    resolvedParams?.q
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-cream-100 font-sans">
       <AnnouncementBar settings={settings} />
@@ -70,10 +104,16 @@ export default async function ProductsPage({
           <div className="text-xs text-ink-500 mb-2 flex items-center space-x-1.5 rtl:space-x-reverse">
             <Link href="/" className="hover:text-plum-800">{t.common.home}</Link>
             <span>/</span>
-            <span className="text-plum-900 font-semibold">{t.common.catalog}</span>
+            <Link href="/products" className="hover:text-plum-800">{t.common.catalog}</Link>
+            {hasActiveFilter && (
+              <>
+                <span>/</span>
+                <span className="text-plum-900 font-semibold">{currentTitle}</span>
+              </>
+            )}
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-plum-900">
-            {currentCategoryName}
+            {currentTitle}
           </h1>
           <p className="text-xs text-ink-500 mt-1">
             {t.product.showingCount.replace('{count}', String(products.length))}
@@ -85,7 +125,7 @@ export default async function ProductsPage({
           <Link
             href="/products"
             className={`px-4 py-2 text-xs font-semibold rounded-full transition-colors ${
-              !resolvedParams?.category
+              !hasActiveFilter
                 ? 'bg-plum-900 text-white shadow-xs'
                 : 'bg-white text-ink-700 hover:bg-plum-50 border border-ink-100'
             }`}
@@ -99,12 +139,13 @@ export default async function ProductsPage({
               english: cat.name,
               arabic: cat.name_ar,
             });
+            const isSelected = resolvedParams?.category === cat.slug;
             return (
               <Link
                 key={cat.id}
                 href={`/products?category=${cat.slug}`}
                 className={`px-4 py-2 text-xs font-semibold rounded-full transition-colors ${
-                  resolvedParams?.category === cat.slug
+                  isSelected
                     ? 'bg-plum-900 text-white shadow-xs'
                     : 'bg-white text-ink-700 hover:bg-plum-50 border border-ink-100'
                 }`}

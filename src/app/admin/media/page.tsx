@@ -91,13 +91,13 @@ export default function AdminMediaPage() {
       {loading ? (
         <div className="py-20 text-center flex flex-col items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-plum-800 mb-2" />
-          <span className="text-xs text-ink-500">Loading Cloudinary media assets...</span>
+          <span className="text-xs text-ink-500 font-medium">Loading Cloudinary media assets...</span>
         </div>
       ) : mediaList.length === 0 ? (
         <div className="py-20 text-center border border-dashed border-ink-200 rounded-3xl bg-white p-8">
-          <ImageIcon className="w-12 h-12 text-ink-300 mx-auto mb-3 stroke-[1.5]" />
-          <h3 className="font-serif text-lg font-bold text-plum-900">No Media Assets Found</h3>
-          <p className="text-xs text-ink-500 mt-1 max-w-sm mx-auto">
+          <ImageIcon className="w-12 h-12 text-ink-400 mx-auto mb-3 stroke-[1.5]" />
+          <h3 className="font-serif text-lg font-bold text-plum-950">No Media Assets Found</h3>
+          <p className="text-xs text-ink-600 mt-1 max-w-sm mx-auto">
             Upload images using the button above to store and optimize them directly in Cloudinary.
           </p>
         </div>
@@ -106,20 +106,20 @@ export default function AdminMediaPage() {
           {mediaList.map((item) => (
             <div
               key={item.id}
-              className="group bg-white rounded-2xl p-3 border border-ink-100 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white rounded-2xl p-3 border border-ink-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
             >
-              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-cream-200 mb-3">
+              <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-cream-200 mb-3 border border-ink-100">
                 <Image src={item.url} alt={item.name} fill className="object-cover" />
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-plum-900 truncate" title={item.name}>
+                <p className="text-xs font-bold text-plum-950 truncate" title={item.name}>
                   {item.name}
                 </p>
 
                 <button
                   onClick={() => handleCopyUrl(item.url, item.id)}
-                  className="w-full mt-2 py-1.5 px-2 bg-cream-100 hover:bg-plum-50 text-plum-900 rounded-lg text-[11px] font-semibold flex items-center justify-center space-x-1 transition-colors border border-ink-100"
+                  className="w-full mt-2 py-1.5 px-2 bg-cream-100 hover:bg-plum-100 text-plum-950 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 transition-colors border border-ink-200"
                 >
                   {copiedId === item.id ? (
                     <>
@@ -128,7 +128,7 @@ export default function AdminMediaPage() {
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3 text-plum-700" />
+                      <Copy className="w-3 h-3 text-plum-800" />
                       <span>Copy Media URL</span>
                     </>
                   )}

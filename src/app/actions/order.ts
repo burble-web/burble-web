@@ -1,13 +1,13 @@
 'use server';
 
 import { createClient, verifyAdminServer } from '@/lib/supabase/server';
-import { checkoutSchema } from '@/lib/validation/schemas';
+import { checkoutSchema, UUID_REGEX } from '@/lib/validation/schemas';
 import { CheckoutFormData, CartItem, Order, OrderStatus } from '@/types';
 import { sendBrevoEmail, buildCustomerOrderEmailHtml, buildAdminOrderEmailHtml } from '@/lib/brevo/email';
 import { revalidatePath } from 'next/cache';
 
 export async function processCheckoutAction(formData: CheckoutFormData, cartItems: CartItem[]) {
-  // 1. Server-side Zod validation
+  // 1. Server-side Zod validation on customer & delivery data
   const validationResult = checkoutSchema.safeParse(formData);
   if (!validationResult.success) {
     return {
@@ -19,18 +19,88 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
   if (!cartItems || cartItems.length === 0) {
     return {
       success: false,
-      error: 'Your cart is empty.',
+      error: formData.locale === 'ar' ? 'سلة التسوق فارغة.' : 'Your cart is empty.',
     };
   }
 
+  const isAr = formData.locale === 'ar';
   const data = validationResult.data;
+
+  // 2. Strict product UUID and quantity validation at the server boundary
+  for (const item of cartItems) {
+    if (!item?.product?.id || !UUID_REGEX.test(item.product.id.trim())) {
+      console.error('[Order Action] Invalid UUID format in cart item:', item?.product?.id);
+      return {
+        success: false,
+        error: isAr
+          ? 'أحد المنتجات في السلة يحتوي على معرف غير صالح. يرجى تحديث أو مسح السلة للمتابعة.'
+          : 'One or more items in your cart have an invalid identifier format. Please refresh or update your cart.',
+      };
+    }
+
+    if (!item.quantity || item.quantity < 1 || item.quantity > 100) {
+      return {
+        success: false,
+        error: isAr
+          ? 'كمية المنتج يجب أن تكون بين 1 و 100.'
+          : 'Product quantity must be between 1 and 100 units.',
+      };
+    }
+  }
 
   try {
     const supabase = await createClient();
 
-    // 2. Format items for Postgres RPC create_order
+    // 3. Authoritative pre-check against Supabase products table
+    const productIds = Array.from(new Set(cartItems.map((item) => item.product.id.trim())));
+    const { data: dbProducts, error: dbError } = await supabase
+      .from('products')
+      .select('id, name, name_ar, price, active, stock_status')
+      .in('id', productIds);
+
+    if (dbError) {
+      console.error('[Order Action] Error fetching authoritative products:', dbError.message);
+      return {
+        success: false,
+        error: isAr ? 'تعذر التحقق من توفر المنتجات في قاعدة البيانات.' : 'Unable to verify product catalog availability.',
+      };
+    }
+
+    const dbProductsMap = new Map((dbProducts || []).map((p) => [p.id, p]));
+
+    for (const item of cartItems) {
+      const dbProd = dbProductsMap.get(item.product.id.trim());
+      if (!dbProd) {
+        return {
+          success: false,
+          error: isAr
+            ? `المنتج "${item.product.name}" لم يعد متاحاً في المتجر.`
+            : `Product "${item.product.name}" is no longer available in the store.`,
+        };
+      }
+
+      if (!dbProd.active) {
+        return {
+          success: false,
+          error: isAr
+            ? `المنتج "${dbProd.name_ar || dbProd.name}" غير متاح حالياً للطلب.`
+            : `Product "${dbProd.name}" is currently inactive and cannot be ordered.`,
+        };
+      }
+
+      if (dbProd.stock_status !== 'in_stock') {
+        return {
+          success: false,
+          error: isAr
+            ? `المنتج "${dbProd.name_ar || dbProd.name}" غير متوفر بالمخزون حالياً.`
+            : `Product "${dbProd.name}" is currently out of stock.`,
+        };
+      }
+    }
+
+    // 4. Format items for Postgres RPC create_order
     const rpcItems = cartItems.map((item) => ({
-      product_id: item.product.id,
+      product_id: item.product.id.trim(),
       quantity: item.quantity,
     }));
 
@@ -53,14 +123,14 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
       console.error('[Order Action] Database create_order RPC error:', rpcError.message);
       return {
         success: false,
-        error: rpcError.message || 'Failed to place order in database.',
+        error: rpcError.message || (isAr ? 'فشل حفظ الطلب في قاعدة البيانات.' : 'Failed to place order in database.'),
       };
     }
 
     if (!rpcResult || !rpcResult.id) {
       return {
         success: false,
-        error: 'Order could not be verified by the database.',
+        error: isAr ? 'تعذر التحقق من تسجيل الطلب في قاعدة البيانات.' : 'Order could not be verified by the database.',
       };
     }
 
@@ -83,16 +153,20 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
       email_sent: false,
       locale: (data.locale || 'en') as 'en' | 'ar',
       created_at: new Date().toISOString(),
-      order_items: cartItems.map((item) => ({
-        product_name: item.product.name,
-        product_name_ar: item.product.name_ar,
-        price: item.product.price,
-        quantity: item.quantity,
-        total: item.product.price * item.quantity,
-      })),
+      order_items: cartItems.map((item) => {
+        const dbProd = dbProductsMap.get(item.product.id.trim());
+        const itemPrice = dbProd ? dbProd.price : item.product.price;
+        return {
+          product_name: dbProd ? dbProd.name : item.product.name,
+          product_name_ar: dbProd ? dbProd.name_ar : item.product.name_ar,
+          price: itemPrice,
+          quantity: item.quantity,
+          total: itemPrice * item.quantity,
+        };
+      }),
     };
 
-    // 3. Trigger Brevo Emails asynchronously
+    // 5. Trigger Brevo Emails asynchronously (non-blocking)
     try {
       // A. Customer gets confirmation email for BOTH COD & WhatsApp orders
       const customerHtml = buildCustomerOrderEmailHtml(fullOrder);
@@ -140,8 +214,51 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
     console.error('[Order Action] Unexpected checkout error:', error);
     return {
       success: false,
-      error: error?.message || 'An unexpected error occurred while placing your order.',
+      error: error?.message || (isAr ? 'حدث خطأ غير متوقع أثناء إتمام الطلب.' : 'An unexpected error occurred while placing your order.'),
     };
+  }
+}
+
+export async function getOrderConfirmationAction(orderNumber: string): Promise<{ success: boolean; data?: Order; error?: string }> {
+  if (!orderNumber || typeof orderNumber !== 'string') {
+    return { success: false, error: 'Invalid order number parameter.' };
+  }
+
+  const cleanOrderNum = orderNumber.trim();
+  if (!/^[A-Za-z0-9\-_]+$/.test(cleanOrderNum)) {
+    return { success: false, error: 'Malformed order number identifier.' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('id, order_number, source, customer_name, customer_email, customer_phone, delivery_address, city, district, pincode, delivery_notes, subtotal, shipping_fee, total_amount, status, locale, created_at')
+      .eq('order_number', cleanOrderNum)
+      .maybeSingle();
+
+    if (orderError) {
+      return { success: false, error: orderError.message };
+    }
+
+    if (!order) {
+      return { success: false, error: 'Order not found.' };
+    }
+
+    const { data: items, error: itemsError } = await supabase
+      .from('order_items')
+      .select('id, order_id, product_id, product_name, product_name_ar, price, quantity, total')
+      .eq('order_id', order.id);
+
+    return {
+      success: true,
+      data: {
+        ...order,
+        order_items: items || [],
+      } as Order,
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to fetch order details.' };
   }
 }
 

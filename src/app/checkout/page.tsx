@@ -3,8 +3,9 @@ import { Metadata } from 'next';
 import { AnnouncementBar } from '@/components/storefront/AnnouncementBar';
 import { Header } from '@/components/storefront/Header';
 import { Footer } from '@/components/storefront/Footer';
-import { getSiteSettings } from '@/lib/data/queries';
+import { getSiteSettings, getProductBySlug } from '@/lib/data/queries';
 import { getServerTranslations } from '@/lib/i18n/server';
+import { CartItem } from '@/types';
 import { CheckoutClient } from './CheckoutClient';
 
 export const instant = false;
@@ -14,12 +15,40 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t.checkout.pageTitle,
     description: t.checkout.pageSubtitle,
+    robots: {
+      index: false,
+      follow: false,
+    },
   };
 }
 
-export default async function CheckoutPage() {
+export default async function CheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ buyNow?: string; qty?: string; method?: string }>;
+}) {
+  const resolvedParams = await searchParams;
   const settings = await getSiteSettings();
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
+
+  let initialBuyNowItem: CartItem | null = null;
+  let buyNowError: string | null = null;
+
+  if (resolvedParams?.buyNow) {
+    const product = await getProductBySlug(resolvedParams.buyNow);
+    if (!product) {
+      buyNowError = locale === 'ar' ? 'المنتج المطلوب غير موجود.' : 'Selected product could not be found.';
+    } else if (!product.active) {
+      buyNowError = locale === 'ar' ? 'المنتج المطلوب غير متاح حالياً.' : 'Selected product is currently inactive.';
+    } else if (product.stock_status !== 'in_stock') {
+      buyNowError = locale === 'ar' ? 'المنتج المطلوب غير متوفر بالمخزون.' : 'Selected product is currently out of stock.';
+    } else {
+      const quantity = Math.max(1, parseInt(resolvedParams.qty || '1', 10) || 1);
+      initialBuyNowItem = { product, quantity };
+    }
+  }
+
+  const initialMethod = resolvedParams?.method === 'whatsapp' ? 'whatsapp' : 'cod';
 
   return (
     <div className="min-h-screen flex flex-col bg-cream-100 font-sans">
@@ -34,7 +63,12 @@ export default async function CheckoutPage() {
           {t.checkout.pageSubtitle}
         </p>
 
-        <CheckoutClient settings={settings} />
+        <CheckoutClient
+          settings={settings}
+          buyNowItem={initialBuyNowItem}
+          buyNowError={buyNowError}
+          initialMethod={initialMethod}
+        />
       </main>
 
       <Footer settings={settings} />

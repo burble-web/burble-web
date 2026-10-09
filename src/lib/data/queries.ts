@@ -76,6 +76,9 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getProducts(options?: {
   categorySlug?: string;
+  occasionSlug?: string;
+  flowerSlug?: string;
+  collectionSlug?: string;
   isFeatured?: boolean;
   isNewArrival?: boolean;
   limit?: number;
@@ -98,6 +101,31 @@ export async function getProducts(options?: {
 
         if (cat?.id) {
           query = query.eq('category_id', cat.id);
+        } else {
+          return [];
+        }
+      }
+
+      const collectionSlug = options?.occasionSlug || options?.flowerSlug || options?.collectionSlug;
+      if (collectionSlug) {
+        const { data: col } = await supabase
+          .from('collections')
+          .select('id')
+          .eq('slug', collectionSlug)
+          .maybeSingle();
+
+        if (col?.id) {
+          const { data: items } = await supabase
+            .from('collection_items')
+            .select('product_id')
+            .eq('collection_id', col.id);
+
+          const productIds = (items || []).map((it) => it.product_id).filter(Boolean);
+          if (productIds.length > 0) {
+            query = query.in('id', productIds);
+          } else {
+            return [];
+          }
         } else {
           return [];
         }
@@ -166,26 +194,30 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return null;
 }
 
-export async function getCollections(type: 'occasion' | 'flower' | 'collection'): Promise<Collection[]> {
+export async function getCollections(type?: 'occasion' | 'flower' | 'collection'): Promise<Collection[]> {
   'use cache';
   if (isSupabaseConfigured()) {
     try {
       const supabase = createPublicClient();
-      const { data, error } = await supabase
+      let query = supabase
         .from('collections')
         .select('id, title, title_ar, slug, subtitle, subtitle_ar, image_url, type, sort_order, active')
-        .eq('type', type)
-        .eq('active', true)
-        .order('sort_order', { ascending: true });
+        .eq('active', true);
+
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      const { data, error } = await query.order('sort_order', { ascending: true });
 
       if (error) {
-        console.error(`[Queries] Error fetching collections (type: ${type}) from Supabase:`, error.message);
+        console.error(`[Queries] Error fetching collections from Supabase:`, error.message);
         return [];
       }
 
       return (data || []) as Collection[];
     } catch (err) {
-      console.error(`[Queries] Exception fetching collections (${type}):`, err);
+      console.error(`[Queries] Exception fetching collections:`, err);
       return [];
     }
   }
@@ -193,7 +225,34 @@ export async function getCollections(type: 'occasion' | 'flower' | 'collection')
   return [];
 }
 
-export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
+export async function getCollectionBySlug(slug: string): Promise<Collection | null> {
+  'use cache';
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from('collections')
+        .select('id, title, title_ar, slug, subtitle, subtitle_ar, image_url, type, sort_order, active')
+        .eq('slug', slug)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (error) {
+        console.error(`[Queries] Error fetching collection by slug from Supabase:`, error.message);
+        return null;
+      }
+
+      return data as Collection | null;
+    } catch (err) {
+      console.error(`[Queries] Exception fetching collection by slug:`, err);
+      return null;
+    }
+  }
+
+  return null;
+}
+
+export async function getBlogPosts(limit = 20): Promise<BlogPost[]> {
   'use cache';
   if (isSupabaseConfigured()) {
     try {
@@ -218,6 +277,33 @@ export async function getBlogPosts(limit = 3): Promise<BlogPost[]> {
   }
 
   return [];
+}
+
+export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+  'use cache';
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('id, title, title_ar, slug, excerpt, excerpt_ar, content, content_ar, cover_image, author, author_ar, is_published, published_at, created_at')
+        .eq('slug', slug)
+        .eq('is_published', true)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[Queries] Error fetching blog post by slug from Supabase:', error.message);
+        return null;
+      }
+
+      return data as BlogPost | null;
+    } catch (err) {
+      console.error('[Queries] Exception fetching blog post by slug:', err);
+      return null;
+    }
+  }
+
+  return null;
 }
 
 export async function getHomepageSections(): Promise<HomepageSection[]> {

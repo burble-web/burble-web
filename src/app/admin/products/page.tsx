@@ -252,73 +252,73 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded-3xl p-6 border border-ink-100 shadow-xs">
+      <div className="bg-white rounded-3xl p-6 border border-ink-200/80 shadow-xs">
         {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center text-ink-400">
-            <Loader2 className="w-6 h-6 animate-spin mb-2" />
+          <div className="py-12 flex flex-col items-center justify-center text-ink-500">
+            <Loader2 className="w-6 h-6 animate-spin mb-2 text-plum-800" />
             <span className="text-xs font-medium">Loading catalog products...</span>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-ink-100">
             <table className="w-full text-start border-collapse text-xs">
               <thead>
-                <tr className="border-b border-ink-100 text-ink-500 font-semibold uppercase tracking-wider">
-                  <th className="py-3 px-4">Product Name (EN / AR)</th>
-                  <th className="py-3 px-4">Arabic Status</th>
-                  <th className="py-3 px-4">Price</th>
-                  <th className="py-3 px-4">Stock</th>
-                  <th className="py-3 px-4">Badges</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-end">Actions</th>
+                <tr className="bg-cream-100/90 border-b border-ink-200 text-ink-800 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3.5 px-4">Product Name (EN / AR)</th>
+                  <th className="py-3.5 px-4">Arabic Status</th>
+                  <th className="py-3.5 px-4">Price</th>
+                  <th className="py-3.5 px-4">Stock</th>
+                  <th className="py-3.5 px-4">Badges</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-end">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-cream-50 transition-colors">
+                  <tr key={product.id} className="hover:bg-cream-50/80 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-cream-200 shrink-0 border border-ink-100">
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-cream-200 shrink-0 border border-ink-200">
                           <Image src={product.main_image_url} alt={product.name} fill className="object-cover" />
                         </div>
                         <div>
-                          <p className="font-bold text-plum-900">{product.name}</p>
+                          <p className="font-bold text-plum-950">{product.name}</p>
                           {product.name_ar && (
-                            <p className="text-[11px] text-plum-700 font-arabic font-semibold">{product.name_ar}</p>
+                            <p className="text-[11px] text-plum-800 font-arabic font-semibold">{product.name_ar}</p>
                           )}
-                          <p className="text-[10px] text-ink-400 font-mono">/{product.slug}</p>
+                          <p className="text-[10px] text-ink-500 font-mono">/{product.slug}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
                       {product.name_ar ? (
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                           product.arabic_translation_source === 'automatic' || product.arabic_translation_source === 'auto'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            ? 'bg-blue-100 text-blue-950 border-blue-300'
+                            : 'bg-emerald-100 text-emerald-950 border-emerald-300'
                         }`}>
                           <Globe className="w-3 h-3" />
                           {product.arabic_translation_source === 'automatic' || product.arabic_translation_source === 'auto' ? 'Auto-Translated' : 'Manual Arabic'}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300">
                           Missing Arabic
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-plum-900">
+                    <td className="py-3.5 px-4 font-bold text-plum-950">
                       QAR {product.price.toFixed(2)}
                       {product.compare_at_price && (
-                        <span className="text-[11px] text-ink-400 line-through ml-1 font-normal">
+                        <span className="text-[11px] text-ink-500 line-through ml-1 font-normal">
                           QAR {product.compare_at_price.toFixed(2)}
                         </span>
                       )}
                     </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                           product.stock_status === 'in_stock'
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                            : 'bg-rose-50 text-rose-800 border border-rose-200'
+                            ? 'bg-emerald-100 text-emerald-950 border-emerald-300'
+                            : 'bg-rose-100 text-rose-950 border-rose-300'
                         }`}
                       >
                         {product.stock_status === 'in_stock' ? 'In Stock' : 'Out of Stock'}
@@ -326,10 +326,10 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="py-3.5 px-4 space-x-1 rtl:space-x-reverse">
                       {product.is_featured && (
-                        <span className="bg-plum-100 text-plum-900 px-2 py-0.5 rounded-md text-[10px] font-bold">Featured</span>
+                        <span className="bg-plum-100 text-plum-950 border border-plum-300 px-2 py-0.5 rounded-md text-[10px] font-bold">Featured</span>
                       )}
                       {product.is_new_arrival && (
-                        <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md text-[10px] font-bold">New</span>
+                        <span className="bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded-md text-[10px] font-bold">New</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4">
@@ -338,12 +338,12 @@ export default function AdminProductsPage() {
                         className="flex items-center gap-1 text-xs font-semibold focus:outline-none"
                       >
                         {product.active ? (
-                          <span className="text-emerald-700 flex items-center gap-1">
+                          <span className="text-emerald-800 flex items-center gap-1 font-bold">
                             <CheckCircle className="w-4 h-4" />
                             <span>Active</span>
                           </span>
                         ) : (
-                          <span className="text-ink-400 flex items-center gap-1">
+                          <span className="text-ink-600 flex items-center gap-1 font-medium">
                             <XCircle className="w-4 h-4" />
                             <span>Inactive</span>
                           </span>
@@ -353,14 +353,14 @@ export default function AdminProductsPage() {
                     <td className="py-3.5 px-4 text-end space-x-1 rtl:space-x-reverse">
                       <button
                         onClick={() => handleEdit(product)}
-                        className="p-1.5 text-plum-800 hover:bg-plum-100 rounded-lg transition-colors"
+                        className="p-2 text-plum-900 hover:bg-plum-100 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="p-1.5 text-rose-700 hover:bg-rose-100 rounded-lg transition-colors"
+                        className="p-2 text-rose-800 hover:bg-rose-100 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />

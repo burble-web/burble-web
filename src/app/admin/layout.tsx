@@ -100,7 +100,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           {/* Navigation Links */}
-          <nav className="mt-6 space-y-1.5">
+          <nav className="mt-6 space-y-1.5" aria-label="Admin Navigation">
             {ADMIN_NAV_KEYS.map((item) => {
               const IconComp = item.icon;
               const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
@@ -109,13 +109,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 ${
                     isActive
-                      ? 'bg-plum-800 text-white font-bold'
-                      : 'hover:bg-plum-900 text-plum-200 hover:text-white'
+                      ? 'bg-plum-800 text-white font-bold shadow-xs border border-plum-700/60'
+                      : 'text-plum-100/90 hover:text-white hover:bg-plum-900/90 font-medium'
                   }`}
                 >
-                  <IconComp className="w-4 h-4 shrink-0" />
+                  <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-blush-200'}`} />
                   <span>{isAr ? item.nameAr : item.name}</span>
                 </Link>
               );
@@ -126,14 +126,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Footer Actions */}
         <div className="pt-6 border-t border-plum-800 space-y-3">
           <div className="px-2 py-1 flex items-center justify-between">
-            <span className="text-[11px] text-plum-300 font-medium">{isAr ? 'اللغة' : 'Language'}:</span>
+            <span className="text-xs text-plum-200 font-semibold">{isAr ? 'اللغة' : 'Language'}:</span>
             <LanguageToggle variant="pill" />
           </div>
 
           <Link
             href="/"
             target="_blank"
-            className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium bg-plum-900/60 hover:bg-plum-900 text-blush-200 transition-colors"
+            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-plum-900/80 hover:bg-plum-900 text-blush-200 hover:text-white transition-colors border border-plum-800/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-300"
           >
             <span>{isAr ? 'زيارة المتجر' : 'Visit Storefront'}</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -141,7 +141,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-rose-300 hover:bg-rose-950/40 hover:text-rose-200 transition-colors"
+            className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-200 hover:bg-rose-950/60 hover:text-rose-100 transition-colors border border-rose-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
           >
             <LogOut className="w-4 h-4" />
             <span>{isAr ? 'تسجيل الخروج' : 'Sign Out'}</span>
