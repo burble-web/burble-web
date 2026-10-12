@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Flower, Phone, Mail, MapPin, Clock } from 'lucide-react';
+import Image from 'next/image';
+import { Flower, Phone, Mail, MapPin, Clock, ChevronDown } from 'lucide-react';
 import { SiteSettings } from '@/types';
 import { useLocale } from '@/lib/i18n/context';
 
@@ -10,23 +11,81 @@ interface FooterProps {
   settings?: SiteSettings;
 }
 
+/**
+ * Collapsible on mobile (tap the heading to open/close),
+ * always expanded from the md breakpoint up.
+ */
+function FooterSection({
+  id,
+  title,
+  openId,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  openId: string | null;
+  onToggle: (id: string) => void;
+  children: React.ReactNode;
+}) {
+  const open = openId === id;
+
+  return (
+    <div className="border-b border-plum-800/80 md:border-0">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        aria-expanded={open}
+        aria-controls={`footer-${id}`}
+        className="w-full flex items-center justify-between py-4 md:py-0 md:mb-4 md:cursor-default md:pointer-events-none text-start"
+      >
+        <h4 className="font-serif text-sm font-semibold text-white tracking-wide">{title}</h4>
+        <ChevronDown
+          className={`w-4 h-4 text-blush-200 transition-transform duration-300 md:hidden ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      <div
+        id={`footer-${id}`}
+        className={`grid transition-all duration-300 ease-in-out md:grid-rows-[1fr] ${
+          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="pb-4 md:pb-0">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Footer({ settings }: FooterProps) {
   const { t, getLocalized, locale } = useLocale();
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const toggle = (id: string) => setOpenId((prev) => (prev === id ? null : id));
 
   const storeName = getLocalized(settings?.store_name, settings?.store_name_ar) || 'BURBLE';
   const phone = settings?.whatsapp_number || '+974 0000 0000';
   const email = settings?.admin_email || 'hello@burble.qa';
 
   return (
-    <footer className="bg-plum-900 text-plum-100 pt-16 pb-12 border-t border-plum-800">
+    <footer className="bg-plum-900 text-plum-100 pt-10 sm:pt-16 pb-8 sm:pb-12 border-t border-plum-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-plum-800/80">
-          
-          {/* Brand Column */}
-          <div className="lg:col-span-1 space-y-4">
-            <Link href="/" className="flex items-center space-x-2 rtl:space-x-reverse">
-              <Flower className="w-6 h-6 text-blush-200" />
-              <span className="font-serif text-2xl font-bold tracking-tight text-white">{storeName}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-0 md:gap-10 pb-6 md:pb-12 md:border-b border-plum-800/80">
+
+          {/* Brand Column (always visible) */}
+          <div className="lg:col-span-1 space-y-4 pb-6 md:pb-0 border-b border-plum-800/80 md:border-0">
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logo.png"
+                alt={storeName}
+                width={150}
+                height={50}
+                className="h-9 w-auto object-contain brightness-0 invert opacity-95 hover:opacity-100 transition-opacity"
+              />
             </Link>
             <p className="text-xs text-plum-200 leading-relaxed">
               {t.footer.tagline}
@@ -44,10 +103,9 @@ export function Footer({ settings }: FooterProps) {
             </div>
           </div>
 
-          {/* Shop Column */}
-          <div>
-            <h4 className="font-serif text-sm font-semibold text-white tracking-wide mb-4">{t.footer.shopHeading}</h4>
-            <ul className="space-y-2.5 text-xs text-plum-200">
+          {/* Shop */}
+          <FooterSection id="shop" title={t.footer.shopHeading} openId={openId} onToggle={toggle}>
+            <ul className="space-y-3 md:space-y-2.5 text-xs text-plum-200">
               <li><Link href="/products" className="hover:text-white transition-colors">{t.product.allFlowers}</Link></li>
               <li><Link href="/products?category=hand-bouquets" className="hover:text-white transition-colors">{t.nav.handBouquets}</Link></li>
               <li><Link href="/products?category=flowers-in-vase" className="hover:text-white transition-colors">{t.nav.flowersInVase}</Link></li>
@@ -55,12 +113,11 @@ export function Footer({ settings }: FooterProps) {
               <li><Link href="/products?category=gift-hampers" className="hover:text-white transition-colors">{t.nav.giftHampers}</Link></li>
               <li><Link href="/products?category=combos" className="hover:text-white transition-colors">{t.nav.combos}</Link></li>
             </ul>
-          </div>
+          </FooterSection>
 
-          {/* Occasions Column */}
-          <div>
-            <h4 className="font-serif text-sm font-semibold text-white tracking-wide mb-4">{t.footer.occasionsHeading}</h4>
-            <ul className="space-y-2.5 text-xs text-plum-200">
+          {/* Occasions */}
+          <FooterSection id="occasions" title={t.footer.occasionsHeading} openId={openId} onToggle={toggle}>
+            <ul className="space-y-3 md:space-y-2.5 text-xs text-plum-200">
               <li><Link href="/products?occasion=birthday" className="hover:text-white transition-colors">{locale === 'ar' ? 'أعياد الميلاد' : 'Birthday'}</Link></li>
               <li><Link href="/products?occasion=anniversary" className="hover:text-white transition-colors">{locale === 'ar' ? 'الذكرى السنوية' : 'Anniversary'}</Link></li>
               <li><Link href="/products?occasion=love-romance" className="hover:text-white transition-colors">{locale === 'ar' ? 'حب ورومانسية' : 'Love & Romance'}</Link></li>
@@ -68,23 +125,21 @@ export function Footer({ settings }: FooterProps) {
               <li><Link href="/products?occasion=get-well-soon" className="hover:text-white transition-colors">{locale === 'ar' ? 'سلامتك وشفاء عاجل' : 'Get Well Soon'}</Link></li>
               <li><Link href="/products?occasion=thank-you" className="hover:text-white transition-colors">{locale === 'ar' ? 'شكر وتقدير' : 'Thank You'}</Link></li>
             </ul>
-          </div>
+          </FooterSection>
 
-          {/* Support Column */}
-          <div>
-            <h4 className="font-serif text-sm font-semibold text-white tracking-wide mb-4">{t.footer.supportHeading}</h4>
-            <ul className="space-y-2.5 text-xs text-plum-200">
+          {/* Support */}
+          <FooterSection id="support" title={t.footer.supportHeading} openId={openId} onToggle={toggle}>
+            <ul className="space-y-3 md:space-y-2.5 text-xs text-plum-200">
               <li><Link href="/about" className="hover:text-white transition-colors">{t.common.aboutUs}</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">{t.common.deliveryInfo}</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">{t.common.refundPolicy}</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">{t.common.faq}</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">{t.common.contactUs}</Link></li>
             </ul>
-          </div>
+          </FooterSection>
 
-          {/* Contact Column */}
-          <div>
-            <h4 className="font-serif text-sm font-semibold text-white tracking-wide mb-4">{t.footer.contactHeading}</h4>
+          {/* Contact */}
+          <FooterSection id="contact" title={t.footer.contactHeading} openId={openId} onToggle={toggle}>
             <ul className="space-y-3 text-xs text-plum-200">
               <li className="flex items-start space-x-2 rtl:space-x-reverse">
                 <MapPin className="w-4 h-4 text-blush-200 shrink-0 mt-0.5" />
@@ -103,14 +158,14 @@ export function Footer({ settings }: FooterProps) {
                 <span>{t.footer.operatingHours}</span>
               </li>
             </ul>
-          </div>
+          </FooterSection>
 
         </div>
 
         {/* Legal Row */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-plum-200 space-y-4 sm:space-y-0">
+        <div className="pt-6 md:pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-plum-200 gap-3 sm:gap-0 text-center sm:text-start">
           <p>© 2026 {storeName}. {t.common.allRightsReserved}</p>
-          <div className="flex space-x-6 rtl:space-x-reverse">
+          <div className="flex gap-6 rtl:flex-row-reverse">
             <Link href="/about" className="hover:text-white transition-colors">{t.common.privacyPolicy}</Link>
             <Link href="/about" className="hover:text-white transition-colors">{t.common.termsConditions}</Link>
           </div>

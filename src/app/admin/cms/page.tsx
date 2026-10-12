@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Eye, Save, Check, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Eye, Save, Check, Loader2, Image as ImageIcon, Sparkles, Upload, Video, Film } from 'lucide-react';
 import { saveCmsConfigurationAction, getAdminCmsConfigurationAction } from '@/app/actions/cms';
 import { translateTextAction } from '@/app/actions/translate';
+import { uploadMediaAssetAction, getCloudinaryUploadSignatureAction, registerMediaAssetAction } from '@/app/actions/media';
 import { MediaPickerModal } from '@/components/admin/MediaPickerModal';
 
 export default function AdminCMSPage() {
@@ -13,9 +14,15 @@ export default function AdminCMSPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const [pickerTargetField, setPickerTargetField] = useState<'desktop' | 'mobile'>('desktop');
+  const [pickerTarget, setPickerTarget] = useState<
+    | { type: 'videoDesktop' }
+    | { type: 'videoMobile' }
+    | { type: 'slideDesktop'; index: number }
+    | { type: 'slideMobile'; index: number }
+  >({ type: 'slideDesktop', index: 0 });
 
   const [cmsData, setCmsData] = useState({
     announcementText: '',
@@ -30,6 +37,23 @@ export default function AdminCMSPage() {
     heroCtaLink: '/products',
     heroDesktopImage: '',
     heroMobileImage: '',
+    heroMediaType: 'images' as 'images' | 'video',
+    heroVideoUrl: '',
+    heroVideoMobileUrl: '',
+    heroSlides: [
+      {
+        desktopImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455269/burble/hero_desktop.jpg',
+        mobileImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455274/burble/hero_mobile.jpg',
+      },
+      {
+        desktopImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455271/burble/hero_slide_two.jpg',
+        mobileImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455275/burble/hero_mobile_v2.jpg',
+      },
+      {
+        desktopImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455268/burble/premium_banner.jpg',
+        mobileImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455274/burble/hero_mobile.jpg',
+      },
+    ],
     showNewArrivals: true,
     showOccasions: true,
     showHandBouquets: true,
@@ -56,6 +80,36 @@ export default function AdminCMSPage() {
         const loadedHeroSubtitle = heroContent.subheading || (!isMetaSubtitle(hero?.subtitle) ? hero?.subtitle : "Sourced daily for life's most memorable moments");
         const loadedHeroSubtitleAr = heroContent.subheading_ar || (!isMetaSubtitle(hero?.subtitle_ar) ? hero?.subtitle_ar : 'مستوردة يومياً لتخليد أجمل لحظات العمر');
 
+        const loadedMediaType = heroContent.media_type || (heroContent.video_url ? 'video' : 'images');
+        const loadedVideoUrl = heroContent.video_url || '';
+        const loadedVideoMobileUrl = heroContent.video_mobile_url || loadedVideoUrl;
+
+        const defaultSlides = [
+          {
+            desktopImage: heroContent.desktop_image || 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455269/burble/hero_desktop.jpg',
+            mobileImage: heroContent.mobile_image || 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455274/burble/hero_mobile.jpg',
+          },
+          {
+            desktopImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455271/burble/hero_slide_two.jpg',
+            mobileImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455275/burble/hero_mobile_v2.jpg',
+          },
+          {
+            desktopImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455268/burble/premium_banner.jpg',
+            mobileImage: 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455274/burble/hero_mobile.jpg',
+          },
+        ];
+
+        let loadedSlides = defaultSlides;
+        if (Array.isArray(heroContent.slides) && heroContent.slides.length > 0) {
+          loadedSlides = heroContent.slides.map((s: any, idx: number) => ({
+            desktopImage: s.desktop_image || s.desktopImage || defaultSlides[idx]?.desktopImage || '',
+            mobileImage: s.mobile_image || s.mobileImage || defaultSlides[idx]?.mobileImage || '',
+          }));
+          while (loadedSlides.length < 3) {
+            loadedSlides.push(defaultSlides[loadedSlides.length] || { desktopImage: '', mobileImage: '' });
+          }
+        }
+
         setCmsData({
           announcementText: settings?.announcement_text || 'Fresh Flowers Sourced Daily • Same-Day Delivery • Premium Quality • Beautifully Wrapped',
           announcementText_ar: settings?.announcement_text_ar || 'زهور نضرة يتم استيرادها يومياً • توصيل في نفس اليوم • جودة فاخرة • تغليف راقٍ ومميز',
@@ -67,8 +121,12 @@ export default function AdminCMSPage() {
           heroCtaText: heroContent.cta_text || 'Shop Flowers',
           heroCtaText_ar: heroContent.cta_text_ar || 'تسوق الزهور',
           heroCtaLink: heroContent.cta_link || '/products',
-          heroDesktopImage: heroContent.desktop_image || '',
-          heroMobileImage: heroContent.mobile_image || '',
+          heroDesktopImage: heroContent.desktop_image || loadedSlides[0].desktopImage,
+          heroMobileImage: heroContent.mobile_image || loadedSlides[0].mobileImage,
+          heroMediaType: loadedMediaType,
+          heroVideoUrl: loadedVideoUrl,
+          heroVideoMobileUrl: loadedVideoMobileUrl,
+          heroSlides: loadedSlides.slice(0, 3),
           showNewArrivals: sections.find((s: any) => s.section_key === 'new_arrivals')?.is_visible ?? true,
           showOccasions: sections.find((s: any) => s.section_key === 'occasions')?.is_visible ?? true,
           showHandBouquets: sections.find((s: any) => s.section_key === 'hand_bouquets')?.is_visible ?? true,
@@ -146,8 +204,136 @@ export default function AdminCMSPage() {
     }
   };
 
-  const handleOpenPicker = (field: 'desktop' | 'mobile') => {
-    setPickerTargetField(field);
+  const applyMediaUrl = (
+    target:
+      | { type: 'videoDesktop' }
+      | { type: 'videoMobile' }
+      | { type: 'slideDesktop'; index: number }
+      | { type: 'slideMobile'; index: number },
+    url: string
+  ) => {
+    if (target.type === 'videoDesktop') {
+      setCmsData((prev) => ({ ...prev, heroVideoUrl: url }));
+    } else if (target.type === 'videoMobile') {
+      setCmsData((prev) => ({ ...prev, heroVideoMobileUrl: url }));
+    } else if (target.type === 'slideDesktop') {
+      setCmsData((prev) => {
+        const nextSlides = [...prev.heroSlides];
+        nextSlides[target.index] = {
+          ...nextSlides[target.index],
+          desktopImage: url,
+        };
+        return {
+          ...prev,
+          heroSlides: nextSlides,
+          heroDesktopImage: target.index === 0 ? url : prev.heroDesktopImage,
+        };
+      });
+    } else if (target.type === 'slideMobile') {
+      setCmsData((prev) => {
+        const nextSlides = [...prev.heroSlides];
+        nextSlides[target.index] = {
+          ...nextSlides[target.index],
+          mobileImage: url,
+        };
+        return {
+          ...prev,
+          heroSlides: nextSlides,
+          heroMobileImage: target.index === 0 ? url : prev.heroMobileImage,
+        };
+      });
+    }
+  };
+
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target:
+      | { type: 'videoDesktop' }
+      | { type: 'videoMobile' }
+      | { type: 'slideDesktop'; index: number }
+      | { type: 'slideMobile'; index: number }
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const targetKey = target.type + ('index' in target ? `_${target.index}` : '');
+    setUploadingTarget(targetKey);
+    setError(null);
+
+    try {
+      let uploadedUrl = '';
+
+      // 1. First attempt: Direct stream to Cloudinary via signed payload (handles large video files up to 100MB)
+      try {
+        const sigRes = await getCloudinaryUploadSignatureAction('burble');
+        if (sigRes.success && sigRes.signature && sigRes.cloudName && sigRes.apiKey) {
+          const cldFormData = new FormData();
+          cldFormData.append('file', file);
+          cldFormData.append('api_key', sigRes.apiKey);
+          cldFormData.append('timestamp', sigRes.timestamp!.toString());
+          cldFormData.append('signature', sigRes.signature);
+          cldFormData.append('folder', sigRes.folder || 'burble');
+          if (sigRes.publicId) cldFormData.append('public_id', sigRes.publicId);
+
+          const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+          const uploadRes = await fetch(
+            `https://api.cloudinary.com/v1_1/${sigRes.cloudName}/${resourceType}/upload`,
+            {
+              method: 'POST',
+              body: cldFormData,
+            }
+          );
+
+          const cldData = await uploadRes.json();
+          if (uploadRes.ok && cldData.secure_url) {
+            uploadedUrl = cldData.secure_url;
+            registerMediaAssetAction({
+              public_id: cldData.public_id,
+              url: cldData.secure_url,
+              format: cldData.format,
+              folder: sigRes.folder || 'burble',
+              alt_text: file.name,
+            }).catch(() => {});
+          } else if (cldData?.error?.message) {
+            console.warn('[Direct Upload Cloudinary Notice]', cldData.error.message);
+          }
+        }
+      } catch (directErr) {
+        console.warn('[Direct Upload Network Exception, falling back]', directErr);
+      }
+
+      // 2. Second attempt / Fallback: Server Action multipart upload
+      if (!uploadedUrl) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await uploadMediaAssetAction(formData);
+        if (res.success && res.asset?.url) {
+          uploadedUrl = res.asset.url;
+        } else {
+          throw new Error(res.error || 'Failed to upload video to Cloudinary.');
+        }
+      }
+
+      applyMediaUrl(target, uploadedUrl);
+      setFeedback('✨ Media uploaded successfully!');
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (err: any) {
+      setError(err?.message || 'Upload failed. Please check file format and try again.');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setUploadingTarget(null);
+      e.target.value = '';
+    }
+  };
+
+  const handleOpenPicker = (
+    target:
+      | { type: 'videoDesktop' }
+      | { type: 'videoMobile' }
+      | { type: 'slideDesktop'; index: number }
+      | { type: 'slideMobile'; index: number }
+  ) => {
+    setPickerTarget(target);
     setMediaPickerOpen(true);
   };
 
@@ -340,47 +526,280 @@ export default function AdminCMSPage() {
             </div>
           </div>
 
-          {/* Hero Images Picker */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">Desktop Hero Image URL</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="https://res.cloudinary.com/..."
-                  value={cmsData.heroDesktopImage}
-                  onChange={(e) => setCmsData({ ...cmsData, heroDesktopImage: e.target.value })}
-                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleOpenPicker('desktop')}
-                  className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0 cursor-pointer transition-colors"
-                >
-                  <ImageIcon className="w-4 h-4 text-plum-800" />
-                </button>
+          {/* Hero Media Type Selector & Upload Controls */}
+          <div className="pt-4 border-t border-ink-200 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-cream-50/70 p-4 rounded-2xl border border-ink-200">
+              <div>
+                <span className="text-xs font-bold text-plum-950 block">Hero Media Format</span>
+                <span className="text-[11px] text-ink-500">
+                  Choose between a single background video or a rotating 3-image carousel with laptop (16:9) & mobile (9:16) ratios.
+                </span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-ink-200 text-xs font-semibold text-plum-950 shadow-2xs hover:bg-cream-100/50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={cmsData.heroMediaType === 'video'}
+                    onChange={(e) => {
+                      const isVideo = e.target.checked;
+                      setCmsData({
+                        ...cmsData,
+                        heroMediaType: isVideo ? 'video' : 'images',
+                      });
+                    }}
+                    className="w-4 h-4 accent-plum-900 rounded cursor-pointer"
+                  />
+                  <Film className="w-3.5 h-3.5 text-plum-800" />
+                  <span>Video Mode (Tick for Video)</span>
+                </label>
               </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">Mobile Hero Image URL</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="https://res.cloudinary.com/..."
-                  value={cmsData.heroMobileImage}
-                  onChange={(e) => setCmsData({ ...cmsData, heroMobileImage: e.target.value })}
-                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleOpenPicker('mobile')}
-                  className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0 cursor-pointer transition-colors"
-                >
-                  <ImageIcon className="w-4 h-4 text-plum-800" />
-                </button>
+            {/* VIDEO MODE: Only 1 video can be added, images are hidden */}
+            {cmsData.heroMediaType === 'video' ? (
+              <div className="p-5 rounded-2xl bg-cream-50/40 border border-plum-900/10 space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold text-plum-900">
+                  <Video className="w-4 h-4 text-plum-800" />
+                  <span>Single Hero Video (Laptop 16:9 & Mobile 9:16)</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Laptop Screen (16:9) Video */}
+                  <div className="space-y-2 bg-white p-4 rounded-xl border border-ink-200">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-plum-950 flex items-center gap-1.5">
+                        <span>Laptop Screen Video</span>
+                        <span className="bg-blush-100 text-plum-900 text-[9px] font-bold px-1.5 py-0.5 rounded">16:9 Ratio</span>
+                      </label>
+                      {uploadingTarget === 'videoDesktop' && (
+                        <span className="text-[10px] text-plum-800 font-semibold flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="https://... (mp4, webm)"
+                        value={cmsData.heroVideoUrl}
+                        onChange={(e) => setCmsData({ ...cmsData, heroVideoUrl: e.target.value })}
+                        className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800"
+                      />
+                      <label className="bg-plum-900 hover:bg-plum-950 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 cursor-pointer transition-colors shadow-2xs">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Upload</span>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, { type: 'videoDesktop' })}
+                        />
+                      </label>
+                    </div>
+                    {cmsData.heroVideoUrl && (
+                      <div className="mt-2 aspect-video rounded-lg overflow-hidden border border-ink-200 bg-black">
+                        <video src={cmsData.heroVideoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mobile Screen (9:16) Video */}
+                  <div className="space-y-2 bg-white p-4 rounded-xl border border-ink-200">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-plum-950 flex items-center gap-1.5">
+                        <span>Mobile Screen Video</span>
+                        <span className="bg-blush-100 text-plum-900 text-[9px] font-bold px-1.5 py-0.5 rounded">9:16 Ratio</span>
+                      </label>
+                      {uploadingTarget === 'videoMobile' && (
+                        <span className="text-[10px] text-plum-800 font-semibold flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="https://... (mp4, webm)"
+                        value={cmsData.heroVideoMobileUrl}
+                        onChange={(e) => setCmsData({ ...cmsData, heroVideoMobileUrl: e.target.value })}
+                        className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800"
+                      />
+                      <label className="bg-plum-900 hover:bg-plum-950 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 cursor-pointer transition-colors shadow-2xs">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Upload</span>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, { type: 'videoMobile' })}
+                        />
+                      </label>
+                    </div>
+                    {cmsData.heroVideoMobileUrl && (
+                      <div className="mt-2 h-44 w-28 mx-auto rounded-lg overflow-hidden border border-ink-200 bg-black">
+                        <video src={cmsData.heroVideoMobileUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* IMAGES MODE: 3 images that move one by one (laptop 16:9 and mobile 9:16 for each) */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-plum-900">
+                    <ImageIcon className="w-4 h-4 text-plum-800" />
+                    <span>3 Hero Images (Rotate one-by-one on homepage)</span>
+                  </div>
+                  <span className="text-[11px] text-ink-500 font-medium">3 Slides configured</span>
+                </div>
+
+                <div className="space-y-4">
+                  {[0, 1, 2].map((idx) => {
+                    const slide = cmsData.heroSlides[idx] || {
+                      desktopImage: '',
+                      mobileImage: '',
+                    };
+                    return (
+                      <div
+                        key={idx}
+                        className="p-4 sm:p-5 rounded-2xl bg-cream-50/40 border border-ink-200 space-y-4 hover:border-plum-800/30 transition-all"
+                      >
+                        <div className="flex items-center justify-between border-b border-ink-200/60 pb-2">
+                          <span className="text-xs font-bold text-plum-950 flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-plum-900 text-white text-[10px] flex items-center justify-center font-serif">
+                              {idx + 1}
+                            </span>
+                            Slide #{idx + 1}
+                          </span>
+                          <span className="text-[10px] text-ink-400 uppercase tracking-widest font-semibold">
+                            {idx === 0 ? 'Primary Default' : `Auto-Slide 0${idx + 1}`}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Laptop 16:9 Image */}
+                          <div className="space-y-2 bg-white p-3 sm:p-4 rounded-xl border border-ink-200">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-plum-950 flex items-center gap-1.5">
+                                <span>Laptop Screen</span>
+                                <span className="bg-blush-100 text-plum-900 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                  16:9 Ratio
+                                </span>
+                              </label>
+                              {uploadingTarget === `slideDesktop_${idx}` && (
+                                <span className="text-[10px] text-plum-800 font-semibold flex items-center gap-1">
+                                  <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="https://res.cloudinary.com/..."
+                                value={slide.desktopImage}
+                                onChange={(e) => {
+                                  const url = e.target.value;
+                                  applyMediaUrl({ type: 'slideDesktop', index: idx }, url);
+                                }}
+                                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800"
+                              />
+                              <label className="bg-plum-900 hover:bg-plum-950 text-white px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 cursor-pointer transition-colors shadow-2xs">
+                                <Upload className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline text-[11px]">Upload</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleFileUpload(e, { type: 'slideDesktop', index: idx })}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPicker({ type: 'slideDesktop', index: idx })}
+                                className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs shrink-0 cursor-pointer transition-colors"
+                                title="Select from Media Library"
+                              >
+                                <ImageIcon className="w-4 h-4 text-plum-800" />
+                              </button>
+                            </div>
+
+                            {slide.desktopImage && (
+                              <div className="mt-2 aspect-video rounded-lg overflow-hidden border border-ink-200 bg-cream-100">
+                                <img
+                                  src={slide.desktopImage}
+                                  alt={`Slide ${idx + 1} Laptop`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Mobile 9:16 Image */}
+                          <div className="space-y-2 bg-white p-3 sm:p-4 rounded-xl border border-ink-200">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-plum-950 flex items-center gap-1.5">
+                                <span>Mobile Screen</span>
+                                <span className="bg-blush-100 text-plum-900 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                  9:16 Ratio
+                                </span>
+                              </label>
+                              {uploadingTarget === `slideMobile_${idx}` && (
+                                <span className="text-[10px] text-plum-800 font-semibold flex items-center gap-1">
+                                  <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="https://res.cloudinary.com/..."
+                                value={slide.mobileImage}
+                                onChange={(e) => {
+                                  const url = e.target.value;
+                                  applyMediaUrl({ type: 'slideMobile', index: idx }, url);
+                                }}
+                                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800"
+                              />
+                              <label className="bg-plum-900 hover:bg-plum-950 text-white px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 cursor-pointer transition-colors shadow-2xs">
+                                <Upload className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline text-[11px]">Upload</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleFileUpload(e, { type: 'slideMobile', index: idx })}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPicker({ type: 'slideMobile', index: idx })}
+                                className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs shrink-0 cursor-pointer transition-colors"
+                                title="Select from Media Library"
+                              >
+                                <ImageIcon className="w-4 h-4 text-plum-800" />
+                              </button>
+                            </div>
+
+                            {slide.mobileImage && (
+                              <div className="mt-2 h-36 w-24 mx-auto rounded-lg overflow-hidden border border-ink-200 bg-cream-100">
+                                <img
+                                  src={slide.mobileImage}
+                                  alt={`Slide ${idx + 1} Mobile`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -451,11 +870,7 @@ export default function AdminCMSPage() {
         isOpen={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
         onSelect={(url) => {
-          if (pickerTargetField === 'desktop') {
-            setCmsData({ ...cmsData, heroDesktopImage: url });
-          } else {
-            setCmsData({ ...cmsData, heroMobileImage: url });
-          }
+          applyMediaUrl(pickerTarget, url);
         }}
       />
     </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -82,13 +83,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="w-5 h-5" />
           </button>
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-plum-900 text-white flex items-center justify-center shadow-xs">
-              <Flower className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-serif text-lg font-bold tracking-tight text-plum-950">BURBLE</span>
-              <span className="text-[10px] text-ink-500 font-medium block -mt-1">{isAr ? 'لوحة الإدارة' : 'Admin'}</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="BURBLE"
+              width={110}
+              height={36}
+              className="h-7 w-auto object-contain"
+            />
+            <span className="text-[10px] text-ink-500 font-medium block">{isAr ? 'لوحة الإدارة' : 'Admin'}</span>
           </Link>
         </div>
 
@@ -128,16 +130,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex-1 overflow-y-auto no-scrollbar -mx-2 px-2">
           {/* Header Logo */}
           <div className="flex items-center justify-between pb-5 border-b border-ink-200">
-            <Link href="/admin" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-plum-900 text-white flex items-center justify-center shadow-xs">
-                <Flower className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-serif text-2xl font-bold tracking-tight text-plum-950 block leading-tight">BURBLE</span>
-                <span className="text-[11px] font-semibold text-plum-800 tracking-wide uppercase block">
-                  {isAr ? 'لوحة إدارة المتجر' : 'Store Management'}
-                </span>
-              </div>
+            <Link href="/admin" className="flex flex-col items-start gap-1">
+              <Image
+                src="/logo.png"
+                alt="BURBLE"
+                width={130}
+                height={43}
+                className="h-8 w-auto object-contain"
+              />
+              <span className="text-[10px] font-semibold text-plum-800 tracking-wider uppercase block">
+                {isAr ? 'لوحة إدارة المتجر' : 'Store Management'}
+              </span>
             </Link>
 
             <button
