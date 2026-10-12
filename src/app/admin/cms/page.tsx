@@ -211,11 +211,11 @@ export default function AdminCMSPage() {
       <form onSubmit={handleSave} className="space-y-8">
         
         {/* 1. Announcement Bar Settings */}
-        <div className="bg-white p-6 rounded-3xl border border-ink-100 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-ink-100">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-ink-200/80 shadow-2xs space-y-5">
+          <div className="flex items-center justify-between pb-4 border-b border-ink-200">
             <div>
-              <h3 className="font-serif text-lg font-bold text-plum-900">Announcement Bar</h3>
-              <p className="text-xs text-ink-500">Top sticky promotional ribbon</p>
+              <h3 className="font-serif text-lg font-bold text-plum-950">Announcement Bar</h3>
+              <p className="text-xs text-ink-500 mt-0.5">Top sticky promotional ribbon displayed across the storefront.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -225,7 +225,7 @@ export default function AdminCMSPage() {
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-ink-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-plum-900"></div>
-              <span className="ms-3 text-xs font-semibold text-ink-700">
+              <span className="ms-3 text-xs font-semibold text-plum-950">
                 {cmsData.announcementEnabled ? 'Enabled' : 'Disabled'}
               </span>
             </label>
@@ -233,18 +233,18 @@ export default function AdminCMSPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">
                 Announcement Text (English)
               </label>
               <input
                 type="text"
                 value={cmsData.announcementText}
                 onChange={(e) => setCmsData({ ...cmsData, announcementText: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5 font-arabic">
                 Announcement Text (العربية)
               </label>
               <input
@@ -252,90 +252,90 @@ export default function AdminCMSPage() {
                 dir="rtl"
                 value={cmsData.announcementText_ar}
                 onChange={(e) => setCmsData({ ...cmsData, announcementText_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2.5 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2.5 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
               />
             </div>
           </div>
         </div>
 
         {/* 2. Hero Section Settings */}
-        <div className="bg-white p-6 rounded-3xl border border-ink-100 shadow-xs space-y-4">
-          <div className="pb-3 border-b border-ink-100">
-            <h3 className="font-serif text-lg font-bold text-plum-900">Hero Main Banner</h3>
-            <p className="text-xs text-ink-500">Above-the-fold full-width storefront hero</p>
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-ink-200/80 shadow-2xs space-y-5">
+          <div className="pb-4 border-b border-ink-200">
+            <h3 className="font-serif text-lg font-bold text-plum-950">Hero Main Banner</h3>
+            <p className="text-xs text-ink-500 mt-0.5">Above-the-fold full-width storefront hero showcase.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Title (English)</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">Hero Title (English)</label>
               <textarea
                 rows={2}
                 value={cmsData.heroTitle}
                 onChange={(e) => setCmsData({ ...cmsData, heroTitle: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Title (العربية)</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5 font-arabic">Hero Title (العربية)</label>
               <textarea
                 rows={2}
                 dir="rtl"
                 value={cmsData.heroTitle_ar}
                 onChange={(e) => setCmsData({ ...cmsData, heroTitle_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Subtitle (English)</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">Hero Subtitle (English)</label>
               <textarea
                 rows={2}
                 value={cmsData.heroSubtitle}
                 onChange={(e) => setCmsData({ ...cmsData, heroSubtitle: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Hero Subtitle (العربية)</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5 font-arabic">Hero Subtitle (العربية)</label>
               <textarea
                 rows={2}
                 dir="rtl"
                 value={cmsData.heroSubtitle_ar}
                 onChange={(e) => setCmsData({ ...cmsData, heroSubtitle_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">CTA Button Text (English)</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">CTA Button Text (English)</label>
               <input
                 type="text"
                 value={cmsData.heroCtaText}
                 onChange={(e) => setCmsData({ ...cmsData, heroCtaText: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">CTA Button Text (العربية)</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5 font-arabic">CTA Button Text (العربية)</label>
               <input
                 type="text"
                 dir="rtl"
                 value={cmsData.heroCtaText_ar}
                 onChange={(e) => setCmsData({ ...cmsData, heroCtaText_ar: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all font-arabic"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">CTA Link Destination</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">CTA Link Destination</label>
               <input
                 type="text"
                 value={cmsData.heroCtaLink}
                 onChange={(e) => setCmsData({ ...cmsData, heroCtaLink: e.target.value })}
-                className="w-full bg-cream-50 border border-ink-100 rounded-xl px-4 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-4 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
               />
             </div>
           </div>
@@ -343,41 +343,41 @@ export default function AdminCMSPage() {
           {/* Hero Images Picker */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Desktop Hero Image URL</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">Desktop Hero Image URL</label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder="https://res.cloudinary.com/..."
                   value={cmsData.heroDesktopImage}
                   onChange={(e) => setCmsData({ ...cmsData, heroDesktopImage: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-3 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => handleOpenPicker('desktop')}
-                  className="bg-cream-200 hover:bg-cream-300 text-plum-900 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0"
+                  className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0 cursor-pointer transition-colors"
                 >
-                  <ImageIcon className="w-4 h-4" />
+                  <ImageIcon className="w-4 h-4 text-plum-800" />
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-plum-900 mb-1">Mobile Hero Image URL</label>
+              <label className="block text-[11px] font-semibold text-plum-950 mb-1.5">Mobile Hero Image URL</label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder="https://res.cloudinary.com/..."
                   value={cmsData.heroMobileImage}
                   onChange={(e) => setCmsData({ ...cmsData, heroMobileImage: e.target.value })}
-                  className="w-full bg-cream-50 border border-ink-100 rounded-xl px-3 py-2 text-xs text-ink-900 focus:outline-none focus:ring-2 focus:ring-plum-800/30"
+                  className="w-full bg-cream-50/50 border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => handleOpenPicker('mobile')}
-                  className="bg-cream-200 hover:bg-cream-300 text-plum-900 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0"
+                  className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs flex items-center gap-1 font-semibold shrink-0 cursor-pointer transition-colors"
                 >
-                  <ImageIcon className="w-4 h-4" />
+                  <ImageIcon className="w-4 h-4 text-plum-800" />
                 </button>
               </div>
             </div>
@@ -385,60 +385,60 @@ export default function AdminCMSPage() {
         </div>
 
         {/* 3. Homepage Section Visibility Toggles */}
-        <div className="bg-white p-6 rounded-3xl border border-ink-100 shadow-xs space-y-4">
-          <div className="pb-3 border-b border-ink-100">
-            <h3 className="font-serif text-lg font-bold text-plum-900">Section Visibility Control</h3>
-            <p className="text-xs text-ink-500">Enable or disable specific sections on the storefront homepage</p>
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-ink-200/80 shadow-2xs space-y-5">
+          <div className="pb-4 border-b border-ink-200">
+            <h3 className="font-serif text-lg font-bold text-plum-950">Section Visibility Control</h3>
+            <p className="text-xs text-ink-500 mt-0.5">Enable or disable specific sections on the storefront homepage.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
-              <span className="text-xs font-semibold text-plum-900">New Arrivals Rail</span>
+            <label className="flex items-center justify-between p-4 rounded-2xl border border-ink-200 bg-cream-50/40 cursor-pointer hover:bg-cream-100/60 transition-colors">
+              <span className="text-xs font-semibold text-plum-950">New Arrivals Rail</span>
               <input
                 type="checkbox"
                 checked={cmsData.showNewArrivals}
                 onChange={(e) => setCmsData({ ...cmsData, showNewArrivals: e.target.checked })}
-                className="w-4 h-4 accent-plum-900 rounded"
+                className="w-4 h-4 accent-plum-900 rounded cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
-              <span className="text-xs font-semibold text-plum-900">Shop by Occasion</span>
+            <label className="flex items-center justify-between p-4 rounded-2xl border border-ink-200 bg-cream-50/40 cursor-pointer hover:bg-cream-100/60 transition-colors">
+              <span className="text-xs font-semibold text-plum-950">Shop by Occasion</span>
               <input
                 type="checkbox"
                 checked={cmsData.showOccasions}
                 onChange={(e) => setCmsData({ ...cmsData, showOccasions: e.target.checked })}
-                className="w-4 h-4 accent-plum-900 rounded"
+                className="w-4 h-4 accent-plum-900 rounded cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
-              <span className="text-xs font-semibold text-plum-900">Hand Bouquets Rail</span>
+            <label className="flex items-center justify-between p-4 rounded-2xl border border-ink-200 bg-cream-50/40 cursor-pointer hover:bg-cream-100/60 transition-colors">
+              <span className="text-xs font-semibold text-plum-950">Hand Bouquets Rail</span>
               <input
                 type="checkbox"
                 checked={cmsData.showHandBouquets}
                 onChange={(e) => setCmsData({ ...cmsData, showHandBouquets: e.target.checked })}
-                className="w-4 h-4 accent-plum-900 rounded"
+                className="w-4 h-4 accent-plum-900 rounded cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
-              <span className="text-xs font-semibold text-plum-900">Flowers in Vase Grid</span>
+            <label className="flex items-center justify-between p-4 rounded-2xl border border-ink-200 bg-cream-50/40 cursor-pointer hover:bg-cream-100/60 transition-colors">
+              <span className="text-xs font-semibold text-plum-950">Flowers in Vase Grid</span>
               <input
                 type="checkbox"
                 checked={cmsData.showFlowersInVase}
                 onChange={(e) => setCmsData({ ...cmsData, showFlowersInVase: e.target.checked })}
-                className="w-4 h-4 accent-plum-900 rounded"
+                className="w-4 h-4 accent-plum-900 rounded cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-ink-100 bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
-              <span className="text-xs font-semibold text-plum-900">From Our Blog</span>
+            <label className="flex items-center justify-between p-4 rounded-2xl border border-ink-200 bg-cream-50/40 cursor-pointer hover:bg-cream-100/60 transition-colors">
+              <span className="text-xs font-semibold text-plum-950">From Our Blog</span>
               <input
                 type="checkbox"
                 checked={cmsData.showBlog}
                 onChange={(e) => setCmsData({ ...cmsData, showBlog: e.target.checked })}
-                className="w-4 h-4 accent-plum-900 rounded"
+                className="w-4 h-4 accent-plum-900 rounded cursor-pointer"
               />
             </label>
           </div>

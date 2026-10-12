@@ -75,22 +75,22 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-plum-950/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-ink-100 flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-plum-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-ink-200 flex flex-col max-h-[85vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-ink-100">
+        <div className="flex items-center justify-between pb-4 border-b border-ink-200">
           <div className="flex items-center space-x-2">
             <ImageIcon className="w-5 h-5 text-plum-800" />
-            <h3 className="font-serif text-lg font-bold text-plum-900">{title}</h3>
+            <h3 className="font-serif text-lg font-bold text-plum-950">{title}</h3>
           </div>
-          <button onClick={onClose} className="p-1 text-ink-400 hover:text-ink-700">
+          <button onClick={onClose} className="p-1.5 text-ink-400 hover:text-ink-700 rounded-lg hover:bg-cream-100 transition-colors cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Upload Action */}
-        <div className="py-3 border-b border-ink-100 flex items-center justify-between">
+        <div className="py-3 border-b border-ink-200 flex items-center justify-between">
           <p className="text-xs text-ink-500">Choose from existing media or upload a new asset to Cloudinary.</p>
           <label className="inline-flex items-center space-x-1.5 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50 shrink-0">
             {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
@@ -113,8 +113,8 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
               <span className="text-xs text-ink-500 font-medium">Loading media library...</span>
             </div>
           ) : mediaList.length === 0 ? (
-            <div className="py-12 text-center border border-dashed border-ink-200 rounded-2xl">
-              <ImageIcon className="w-10 h-10 text-ink-400 mx-auto mb-2" />
+            <div className="py-12 text-center border border-dashed border-ink-200 rounded-2xl bg-cream-50/30 p-6">
+              <ImageIcon className="w-10 h-10 text-ink-400 mx-auto mb-2 stroke-[1.5]" />
               <p className="text-xs font-bold text-plum-950">No media assets in library</p>
               <p className="text-[11px] text-ink-600 mt-0.5 font-medium">Upload images above to add them to your Cloudinary storage.</p>
             </div>
@@ -127,7 +127,7 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
                     key={item.id}
                     onClick={() => setSelectedUrl(item.url)}
                     className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all ${
-                      isSelected ? 'border-plum-800 ring-2 ring-plum-800/30 shadow-md' : 'border-ink-200 hover:border-plum-400'
+                      isSelected ? 'border-plum-800 ring-2 ring-plum-800/30 shadow-md scale-[1.02]' : 'border-ink-200 hover:border-plum-400'
                     }`}
                   >
                     <Image src={item.url} alt={item.name} fill className="object-cover" />
@@ -146,21 +146,21 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Select Im
         </div>
 
         {/* Footer */}
-        <div className="pt-4 border-t border-ink-100 flex items-center justify-between">
+        <div className="pt-4 border-t border-ink-200 flex items-center justify-between">
           <span className="text-xs text-ink-600 font-medium truncate max-w-xs">
             {selectedUrl ? `Selected: ${selectedUrl.split('/').pop()}` : 'No image selected'}
           </span>
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-ink-200 text-ink-800 text-xs font-semibold hover:bg-cream-100"
+              className="px-4 py-2 rounded-xl border border-ink-200 text-ink-800 text-xs font-semibold hover:bg-cream-100 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={!selectedUrl}
-              className="px-5 py-2 rounded-xl bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white text-xs font-semibold shadow-md"
+              className="px-5 py-2 rounded-xl bg-plum-900 hover:bg-plum-800 disabled:opacity-50 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               Use Selected Image
             </button>

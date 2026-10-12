@@ -157,11 +157,21 @@ export async function processCheckoutAction(formData: CheckoutFormData, cartItem
         const dbProd = dbProductsMap.get(item.product.id.trim());
         const itemPrice = dbProd ? dbProd.price : item.product.price;
         return {
+          product_id: item.product.id.trim(),
           product_name: dbProd ? dbProd.name : item.product.name,
           product_name_ar: dbProd ? dbProd.name_ar : item.product.name_ar,
           price: itemPrice,
           quantity: item.quantity,
           total: itemPrice * item.quantity,
+          image_url: item.product.main_image_url || null,
+          product: {
+            id: item.product.id.trim(),
+            name: dbProd ? dbProd.name : item.product.name,
+            name_ar: dbProd ? dbProd.name_ar : item.product.name_ar,
+            main_image_url: item.product.main_image_url,
+            slug: item.product.slug,
+            stock_status: dbProd ? dbProd.stock_status : item.product.stock_status,
+          },
         };
       }),
     };
@@ -250,11 +260,38 @@ export async function getOrderConfirmationAction(orderNumber: string): Promise<{
       .select('id, order_id, product_id, product_name, product_name_ar, price, quantity, total')
       .eq('order_id', order.id);
 
+    if (itemsError) {
+      console.warn('[Order Action] Warning fetching confirmation order_items:', itemsError.message);
+    }
+
+    const productIds = Array.from(new Set((items || []).map((it) => it.product_id).filter(Boolean))) as string[];
+    let productsMap = new Map<string, { id: string; name: string; name_ar?: string; main_image_url: string; slug: string; stock_status: string }>();
+
+    if (productIds.length > 0) {
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('id, name, name_ar, main_image_url, slug, stock_status')
+        .in('id', productIds);
+
+      if (productsData) {
+        productsMap = new Map(productsData.map((p) => [p.id, p]));
+      }
+    }
+
+    const fullItems = (items || []).map((it) => {
+      const prod = it.product_id ? productsMap.get(it.product_id) : null;
+      return {
+        ...it,
+        image_url: prod?.main_image_url || null,
+        product: prod || null,
+      };
+    });
+
     return {
       success: true,
       data: {
         ...order,
-        order_items: items || [],
+        order_items: fullItems,
       } as Order,
     };
   } catch (err: any) {
@@ -297,9 +334,33 @@ export async function getAdminOrdersAction(): Promise<{ success: boolean; data?:
       console.warn('[Order Action] Warning fetching order_items:', itemsError.message);
     }
 
+    // Fetch associated product images and catalog snapshot
+    const productIds = Array.from(new Set((items || []).map((it) => it.product_id).filter(Boolean))) as string[];
+    let productsMap = new Map<string, { id: string; name: string; name_ar?: string; main_image_url: string; slug: string; stock_status: string }>();
+
+    if (productIds.length > 0) {
+      const { data: productsData, error: prodErr } = await supabase
+        .from('products')
+        .select('id, name, name_ar, main_image_url, slug, stock_status')
+        .in('id', productIds);
+
+      if (!prodErr && productsData) {
+        productsMap = new Map(productsData.map((p) => [p.id, p]));
+      }
+    }
+
     const fullOrders: Order[] = orders.map((o) => ({
       ...o,
-      order_items: (items || []).filter((it) => it.order_id === o.id),
+      order_items: (items || [])
+        .filter((it) => it.order_id === o.id)
+        .map((it) => {
+          const prod = it.product_id ? productsMap.get(it.product_id) : null;
+          return {
+            ...it,
+            image_url: prod?.main_image_url || null,
+            product: prod || null,
+          };
+        }),
     }));
 
     return { success: true, data: fullOrders };
@@ -341,6 +402,7 @@ export async function getAdminDashboardMetricsAction(): Promise<{
   success: boolean;
   totalSales: number;
   ordersCount: number;
+  pendingOrdersCount: number;
   productsCount: number;
   categoriesCount: number;
   recentOrders: Order[];
@@ -354,6 +416,7 @@ export async function getAdminDashboardMetricsAction(): Promise<{
         success: false,
         totalSales: 0,
         ordersCount: 0,
+        pendingOrdersCount: 0,
         productsCount: 0,
         categoriesCount: 0,
         recentOrders: [],
@@ -384,13 +447,58 @@ export async function getAdminDashboardMetricsAction(): Promise<{
       .eq('active', true);
 
     const allOrders = orders || [];
-    const totalSales = allOrders.reduce((acc, curr) => acc + (Number(curr.total_amount) || 0), 0);
-    const recentOrders: Order[] = allOrders.slice(0, 5) as Order[];
+    // Calculate total sales strictly excluding cancelled orders
+    const totalSales = allOrders
+      .filter((o) => o.status !== 'cancelled')
+      .reduce((acc, curr) => acc + (Number(curr.total_amount) || 0), 0);
+
+    const pendingOrdersCount = allOrders.filter((o) => o.status === 'pending').length;
+
+    // Fetch items and product images for top 5 recent orders
+    const recentOrdersRaw = allOrders.slice(0, 5);
+    let recentOrders: Order[] = recentOrdersRaw as Order[];
+
+    if (recentOrdersRaw.length > 0) {
+      const recentIds = recentOrdersRaw.map((o) => o.id);
+      const { data: recentItems } = await supabase
+        .from('order_items')
+        .select('id, order_id, product_id, product_name, product_name_ar, price, quantity, total')
+        .in('order_id', recentIds);
+
+      const recentProductIds = Array.from(new Set((recentItems || []).map((it) => it.product_id).filter(Boolean))) as string[];
+      let productsMap = new Map<string, { id: string; name: string; name_ar?: string; main_image_url: string; slug: string; stock_status: string }>();
+
+      if (recentProductIds.length > 0) {
+        const { data: productsData } = await supabase
+          .from('products')
+          .select('id, name, name_ar, main_image_url, slug, stock_status')
+          .in('id', recentProductIds);
+
+        if (productsData) {
+          productsMap = new Map(productsData.map((p) => [p.id, p]));
+        }
+      }
+
+      recentOrders = recentOrdersRaw.map((o) => ({
+        ...o,
+        order_items: (recentItems || [])
+          .filter((it) => it.order_id === o.id)
+          .map((it) => {
+            const prod = it.product_id ? productsMap.get(it.product_id) : null;
+            return {
+              ...it,
+              image_url: prod?.main_image_url || null,
+              product: prod || null,
+            };
+          }),
+      })) as Order[];
+    }
 
     return {
       success: true,
       totalSales,
       ordersCount: allOrders.length,
+      pendingOrdersCount,
       productsCount: productsCount || 0,
       categoriesCount: categoriesCount || 0,
       recentOrders,
@@ -400,6 +508,7 @@ export async function getAdminDashboardMetricsAction(): Promise<{
       success: false,
       totalSales: 0,
       ordersCount: 0,
+      pendingOrdersCount: 0,
       productsCount: 0,
       categoriesCount: 0,
       recentOrders: [],

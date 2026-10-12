@@ -143,6 +143,15 @@ export interface OrderItem {
   price: number;
   quantity: number;
   total: number;
+  image_url?: string | null;
+  product?: {
+    id: string;
+    name?: string;
+    name_ar?: string;
+    main_image_url?: string;
+    slug?: string;
+    stock_status?: string;
+  } | null;
 }
 
 export interface Order {

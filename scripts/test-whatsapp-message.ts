@@ -170,7 +170,8 @@ function runWhatsAppFormattingTests() {
     locale: 'en',
   });
 
-  assert(waUrl.startsWith('https://wa.me/97455001234?text='), 'WA URL: Sanitizes phone number correctly');
+  assert(waUrl.startsWith('https://api.whatsapp.com/send?phone=97455001234&text='), 'WA URL: Uses api.whatsapp.com/send and sanitizes phone number');
+  assert(!waUrl.includes('wa.me'), 'WA URL: Does not use wa.me');
   assert(waUrl.includes(encodeURIComponent('*Order Reference:* #BURBLE-20261009-1004')), 'WA URL: Properly URL-encodes message content');
 
   console.log('\n🌸 ===================================== 🌸');
