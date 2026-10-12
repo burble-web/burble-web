@@ -190,7 +190,7 @@ async function runCheckoutReliabilityTests() {
 
   assert(waOrderUrl.includes('BURBLE-20261009-5555'), 'Test 5.1: WhatsApp link embeds the confirmed database order number');
   assert(waOrderUrl.includes('Direct') || waOrderUrl.includes('buy'), 'Test 5.2: WhatsApp link includes snapshot product details');
-  assert(waOrderUrl.startsWith('https://wa.me/'), 'Test 5.3: Handoff URL is properly formed for WhatsApp Web / App');
+  assert(waOrderUrl.startsWith('https://api.whatsapp.com/send?phone='), 'Test 5.3: Handoff URL is properly formed with https://api.whatsapp.com/send');
 
   // -------------------------------------------------------------
   // TEST 6: Placing a New Order After a Previous Successful Order (No Stale Modal / Block)

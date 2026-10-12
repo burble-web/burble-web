@@ -119,6 +119,8 @@ export function CheckoutClient({
           totalAmount: res.order.total_amount,
           currencySymbol: settings.currency_symbol,
           locale,
+          createdAt: res.order.created_at,
+          paymentMethod: 'whatsapp',
         });
 
         // Attempt non-blocking window.open in browser

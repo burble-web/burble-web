@@ -38,7 +38,7 @@ export function Footer({ settings }: FooterProps) {
               <a href="#" className="p-2 bg-plum-800/80 rounded-full hover:bg-plum-700 hover:text-white transition-colors" aria-label="Facebook">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.374 14.5 5 15.5 5H18V0h-3.808C10.592 0 9 1.583 9 4.615V8z"/></svg>
               </a>
-              <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} className="p-2 bg-plum-800/80 rounded-full hover:bg-plum-700 hover:text-white transition-colors" aria-label="WhatsApp">
+              <a href={`https://api.whatsapp.com/send?phone=${phone.replace(/[^0-9]/g, '')}`} className="p-2 bg-plum-800/80 rounded-full hover:bg-plum-700 hover:text-white transition-colors" aria-label="WhatsApp">
                 <Phone className="w-4 h-4" />
               </a>
             </div>
