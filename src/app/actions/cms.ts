@@ -17,6 +17,10 @@ export interface CmsSavePayload {
   heroCtaLink: string;
   heroDesktopImage: string;
   heroMobileImage: string;
+  heroMediaType?: 'images' | 'video';
+  heroVideoUrl?: string;
+  heroVideoMobileUrl?: string;
+  heroSlides?: { desktopImage: string; mobileImage: string }[];
   showNewArrivals: boolean;
   showOccasions: boolean;
   showHandBouquets: boolean;
@@ -68,6 +72,9 @@ export async function saveCmsConfigurationAction(payload: CmsSavePayload) {
       .eq('id', 1);
 
     // 3. Upsert hero section CMS config in homepage_sections
+    const primaryDesktopImg = payload.heroSlides?.[0]?.desktopImage || payload.heroDesktopImage || '';
+    const primaryMobileImg = payload.heroSlides?.[0]?.mobileImage || payload.heroMobileImage || primaryDesktopImg;
+
     await supabase
       .from('homepage_sections')
       .upsert({
@@ -85,8 +92,14 @@ export async function saveCmsConfigurationAction(payload: CmsSavePayload) {
           cta_text: payload.heroCtaText,
           cta_text_ar: finalHeroCtaAr,
           cta_link: payload.heroCtaLink,
-          desktop_image: payload.heroDesktopImage,
-          mobile_image: payload.heroMobileImage,
+          desktop_image: primaryDesktopImg,
+          mobile_image: primaryMobileImg,
+          media_type: payload.heroMediaType || 'images',
+          video_url: payload.heroVideoUrl || '',
+          video_mobile_url: payload.heroVideoMobileUrl || payload.heroVideoUrl || '',
+          slides: payload.heroSlides && payload.heroSlides.length > 0 ? payload.heroSlides : [
+            { desktop_image: primaryDesktopImg, mobile_image: primaryMobileImg },
+          ],
         },
         updated_at: new Date().toISOString(),
       }, { onConflict: 'section_key' });
