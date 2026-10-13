@@ -162,10 +162,28 @@ export function Footer({ settings }: FooterProps) {
 
         </div>
 
-        {/* Legal Row */}
-        <div className="pt-6 md:pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-plum-200 gap-3 sm:gap-0 text-center sm:text-start">
-          <p>© 2026 {storeName}. {t.common.allRightsReserved}</p>
-          <div className="flex gap-6 rtl:flex-row-reverse">
+        {/* Legal & Credits Row (In the same line on desktop, center-aligned Ekodrix) */}
+        <div className="pt-6 md:pt-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-plum-200 gap-3 md:gap-0 text-center">
+          {/* Left: Copyright */}
+          <p className="order-1 md:order-1 text-center md:text-start md:flex-1">
+            © 2026 {storeName}. {t.common.allRightsReserved}
+          </p>
+
+          {/* Center: Crafted by Ekodrix */}
+          <div className="order-3 md:order-2 flex items-center justify-center text-[10px] md:text-[11px] tracking-widest uppercase md:flex-1 text-center" dir="ltr">
+            <span className="text-plum-300 font-medium">CRAFTED BY&nbsp;</span>
+            <a
+              href="https://www.ekodrix.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-white hover:text-blush-200 transition-colors underline underline-offset-4 decoration-white/40 hover:decoration-blush-200"
+            >
+              EKODRIX
+            </a>
+          </div>
+
+          {/* Right: Policy Links */}
+          <div className="order-2 md:order-3 flex gap-6 justify-center md:justify-end md:flex-1 rtl:flex-row-reverse">
             <Link href="/about" className="hover:text-white transition-colors">{t.common.privacyPolicy}</Link>
             <Link href="/about" className="hover:text-white transition-colors">{t.common.termsConditions}</Link>
           </div>

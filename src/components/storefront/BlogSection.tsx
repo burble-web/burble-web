@@ -82,51 +82,53 @@ export function BlogSection({ posts }: BlogSectionProps) {
             <p className="text-xs text-ink-500 font-normal mt-0.5 sm:mt-1">{t.sections.fromOurBlogSubtitle}</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Mobile Carousel Arrows */}
-            {posts.length > 1 && (
-              <div className="flex md:hidden items-center gap-1.5 me-1">
-                <button
-                  type="button"
-                  onClick={scrollPrev}
-                  disabled={!canScrollPrev}
-                  className="w-7 h-7 rounded-full border border-plum-200 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all"
-                  aria-label="Previous article"
-                >
-                  <ChevronLeft className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-                </button>
-                <button
-                  type="button"
-                  onClick={scrollNext}
-                  disabled={!canScrollNext}
-                  className="w-7 h-7 rounded-full border border-plum-200 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all"
-                  aria-label="Next article"
-                >
-                  <ChevronRight className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-            )}
-
+          <div>
             <Link href="/blog" className="text-xs font-semibold text-plum-800 hover:text-plum-700 whitespace-nowrap">
               {t.common.viewAll} →
             </Link>
           </div>
         </div>
 
-        {/* Mobile: 1 Article Carousel (md:hidden) */}
+        {/* Mobile: 1 Article Carousel with Left/Right Centered Arrows (md:hidden) */}
         <div className="block md:hidden">
-          <div
-            ref={containerRef}
-            className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {posts.map((post) => (
-              <div
-                key={post.id}
-                className="w-full min-w-full max-w-full shrink-0 snap-center"
+          <div className="relative">
+            {posts.length > 1 && (
+              <button
+                type="button"
+                onClick={scrollPrev}
+                disabled={!canScrollPrev}
+                className="absolute -start-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+                aria-label="Previous article"
               >
-                {renderBlogCard(post)}
-              </div>
-            ))}
+                <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+
+            <div
+              ref={containerRef}
+              className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="w-full min-w-full max-w-full shrink-0 snap-center"
+                >
+                  {renderBlogCard(post)}
+                </div>
+              ))}
+            </div>
+
+            {posts.length > 1 && (
+              <button
+                type="button"
+                onClick={scrollNext}
+                disabled={!canScrollNext}
+                className="absolute -end-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+                aria-label="Next article"
+              >
+                <ChevronRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+              </button>
+            )}
           </div>
 
           {/* Dots Indicator */}

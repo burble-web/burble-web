@@ -1,5 +1,6 @@
 import { createPublicClient } from '@/lib/supabase/server';
 import { Category, Collection, Product, BlogPost, SiteSettings, HomepageSection } from '@/types';
+import { getLocalCmsData } from '@/lib/data/cms-store';
 
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   id: 1,
@@ -351,28 +352,39 @@ export async function getHomepageSections(): Promise<HomepageSection[]> {
             ...sec,
             content_json: {
               ...content,
-              banner_image: content.banner_image || mediaMap['burble/delivery_banner'] || '',
+              banner_image: content.banner_image || '',
             },
           };
         }
         return sec;
       });
 
-      if (!sections.some((s) => s.section_key === 'delivery_banner') && mediaMap['burble/delivery_banner']) {
-        sections.push({
-          id: 'def-delivery-banner',
-          section_key: 'delivery_banner',
-          title: 'Same-Day Delivery Banner',
-          title_ar: 'بانر التوصيل السريع في نفس اليوم',
-          subtitle: null,
-          subtitle_ar: null,
-          is_visible: true,
-          sort_order: 14,
-          content_json: {
-            banner_image: mediaMap['burble/delivery_banner'],
-          },
-          updated_at: new Date().toISOString(),
-        });
+      // Merge local CMS persistent store data (e.g. promo_cards)
+      const localData = getLocalCmsData();
+      if (localData.promo_cards) {
+        const promoIndex = sections.findIndex((s) => s.section_key === 'promo_cards');
+        if (promoIndex >= 0) {
+          sections[promoIndex] = {
+            ...sections[promoIndex],
+            content_json: {
+              ...sections[promoIndex].content_json,
+              ...localData.promo_cards,
+            },
+          };
+        } else {
+          sections.push({
+            id: 'local-promo-cards',
+            section_key: 'promo_cards',
+            title: 'Promotional Cards',
+            title_ar: 'البطاقات الترويجية',
+            subtitle: null,
+            subtitle_ar: null,
+            is_visible: true,
+            sort_order: 11,
+            content_json: localData.promo_cards,
+            updated_at: new Date().toISOString(),
+          });
+        }
       }
 
       return sections as HomepageSection[];
