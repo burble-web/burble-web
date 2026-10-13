@@ -36,18 +36,18 @@ export function NewsletterSection() {
             <span>{t.newsletter.successMessage}</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="max-w-md mx-auto flex items-center space-x-2 rtl:space-x-reverse">
+          <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2">
             <input
               type="email"
               placeholder={t.newsletter.placeholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="flex-1 bg-white border border-ink-100 rounded-full px-5 py-3 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/30 shadow-xs"
+              className="w-full sm:flex-1 min-w-0 bg-white border border-ink-100 rounded-full px-5 py-3 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/30 shadow-xs"
             />
             <button
               type="submit"
-              className="bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-6 py-3 rounded-full transition-colors shadow-md shrink-0"
+              className="w-full sm:w-auto bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-6 py-3 rounded-full transition-colors shadow-md shrink-0 whitespace-nowrap"
             >
               {t.newsletter.subscribeButton}
             </button>

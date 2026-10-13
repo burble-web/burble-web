@@ -1,9 +1,15 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Poppins, Cairo } from 'next/font/google';
 import './globals.css';
 import { getServerLocale } from '@/lib/i18n/server';
 import { getDirection } from '@/lib/i18n/config';
 import { LocaleProvider } from '@/lib/i18n/context';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],

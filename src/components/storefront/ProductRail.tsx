@@ -62,7 +62,7 @@ export function ProductRail({ title, subtitle, products, viewAllLink = '/product
             type="button"
             onClick={scrollPrev}
             disabled={!canScrollPrev}
-            className="absolute -start-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+            className="absolute start-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
             aria-label="Previous product"
           >
             <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
@@ -89,7 +89,7 @@ export function ProductRail({ title, subtitle, products, viewAllLink = '/product
             type="button"
             onClick={scrollNext}
             disabled={!canScrollNext}
-            className="absolute -end-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+            className="absolute end-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
             aria-label="Next product"
           >
             <ChevronRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />

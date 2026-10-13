@@ -65,7 +65,7 @@ export default async function StorefrontPage() {
     : t.sections.handBouquetsTitle;
 
   return (
-    <div className="min-h-screen flex flex-col bg-cream-100 font-sans selection:bg-plum-800 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-cream-100 font-sans selection:bg-plum-800 selection:text-white w-full max-w-full overflow-x-hidden">
       {/* 1. Announcement Bar */}
       <AnnouncementBar settings={settings} />
 
@@ -73,7 +73,7 @@ export default async function StorefrontPage() {
       <Header />
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-full overflow-x-hidden">
         {/* 3. Hero Section (Controlled via CMS) */}
         <HeroSection section={heroSection} />
 
