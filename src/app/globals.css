@@ -49,11 +49,25 @@
   --border-color: #E8DFE8;
 }
 
+html,
+body {
+  max-width: 100vw;
+  width: 100%;
+  overflow-x: clip;
+  position: relative;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 
