@@ -22,6 +22,9 @@ export default function AdminCMSPage() {
     | { type: 'videoMobile' }
     | { type: 'slideDesktop'; index: number }
     | { type: 'slideMobile'; index: number }
+    | { type: 'promoGiftHampers' }
+    | { type: 'promoCombos' }
+    | { type: 'promoDiyFlowers' }
   >({ type: 'slideDesktop', index: 0 });
 
   const [cmsData, setCmsData] = useState({
@@ -59,6 +62,9 @@ export default function AdminCMSPage() {
     showHandBouquets: true,
     showFlowersInVase: true,
     showBlog: true,
+    promoGiftHampersImage: '',
+    promoCombosImage: '',
+    promoDiyFlowersImage: '',
   });
 
   useEffect(() => {
@@ -110,6 +116,13 @@ export default function AdminCMSPage() {
           }
         }
 
+        const promo = sections.find((s: any) => s.section_key === 'promo_cards');
+        const promoContent = promo?.content_json || {};
+        const categories = res.categories || [];
+        const giftCat = categories.find((c: any) => c.slug === 'gift-hampers');
+        const combosCat = categories.find((c: any) => c.slug === 'combos');
+        const diyCat = categories.find((c: any) => c.slug === 'diy-flowers');
+
         setCmsData({
           announcementText: settings?.announcement_text || 'Fresh Flowers Sourced Daily • Same-Day Delivery • Premium Quality • Beautifully Wrapped',
           announcementText_ar: settings?.announcement_text_ar || 'زهور نضرة يتم استيرادها يومياً • توصيل في نفس اليوم • جودة فاخرة • تغليف راقٍ ومميز',
@@ -132,6 +145,9 @@ export default function AdminCMSPage() {
           showHandBouquets: sections.find((s: any) => s.section_key === 'hand_bouquets')?.is_visible ?? true,
           showFlowersInVase: sections.find((s: any) => s.section_key === 'flowers_in_vase')?.is_visible ?? true,
           showBlog: sections.find((s: any) => s.section_key === 'blog')?.is_visible ?? true,
+          promoGiftHampersImage: promoContent.gift_hampers_image || giftCat?.image_url || '',
+          promoCombosImage: promoContent.combos_image || combosCat?.image_url || '',
+          promoDiyFlowersImage: promoContent.diy_flowers_image || diyCat?.image_url || '',
         });
       } catch (err) {
         console.error('Failed to load CMS content from database', err);
@@ -209,13 +225,22 @@ export default function AdminCMSPage() {
       | { type: 'videoDesktop' }
       | { type: 'videoMobile' }
       | { type: 'slideDesktop'; index: number }
-      | { type: 'slideMobile'; index: number },
+      | { type: 'slideMobile'; index: number }
+      | { type: 'promoGiftHampers' }
+      | { type: 'promoCombos' }
+      | { type: 'promoDiyFlowers' },
     url: string
   ) => {
     if (target.type === 'videoDesktop') {
       setCmsData((prev) => ({ ...prev, heroVideoUrl: url }));
     } else if (target.type === 'videoMobile') {
       setCmsData((prev) => ({ ...prev, heroVideoMobileUrl: url }));
+    } else if (target.type === 'promoGiftHampers') {
+      setCmsData((prev) => ({ ...prev, promoGiftHampersImage: url }));
+    } else if (target.type === 'promoCombos') {
+      setCmsData((prev) => ({ ...prev, promoCombosImage: url }));
+    } else if (target.type === 'promoDiyFlowers') {
+      setCmsData((prev) => ({ ...prev, promoDiyFlowersImage: url }));
     } else if (target.type === 'slideDesktop') {
       setCmsData((prev) => {
         const nextSlides = [...prev.heroSlides];
@@ -252,6 +277,9 @@ export default function AdminCMSPage() {
       | { type: 'videoMobile' }
       | { type: 'slideDesktop'; index: number }
       | { type: 'slideMobile'; index: number }
+      | { type: 'promoGiftHampers' }
+      | { type: 'promoCombos' }
+      | { type: 'promoDiyFlowers' }
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -315,7 +343,20 @@ export default function AdminCMSPage() {
       }
 
       applyMediaUrl(target, uploadedUrl);
-      setFeedback('✨ Media uploaded successfully!');
+
+      // Auto-save promo card image upload immediately to live storefront
+      if (['promoGiftHampers', 'promoCombos', 'promoDiyFlowers'].includes(target.type)) {
+        const nextCms = {
+          ...cmsData,
+          promoGiftHampersImage: target.type === 'promoGiftHampers' ? uploadedUrl : cmsData.promoGiftHampersImage,
+          promoCombosImage: target.type === 'promoCombos' ? uploadedUrl : cmsData.promoCombosImage,
+          promoDiyFlowersImage: target.type === 'promoDiyFlowers' ? uploadedUrl : cmsData.promoDiyFlowersImage,
+        };
+        await saveCmsConfigurationAction(nextCms);
+        setFeedback('✨ Promotional card image uploaded and saved live to storefront!');
+      } else {
+        setFeedback('✨ Media uploaded successfully!');
+      }
       setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
       setError(err?.message || 'Upload failed. Please check file format and try again.');
@@ -332,6 +373,9 @@ export default function AdminCMSPage() {
       | { type: 'videoMobile' }
       | { type: 'slideDesktop'; index: number }
       | { type: 'slideMobile'; index: number }
+      | { type: 'promoGiftHampers' }
+      | { type: 'promoCombos' }
+      | { type: 'promoDiyFlowers' }
   ) => {
     setPickerTarget(target);
     setMediaPickerOpen(true);
@@ -803,7 +847,166 @@ export default function AdminCMSPage() {
           </div>
         </div>
 
-        {/* 3. Homepage Section Visibility Toggles */}
+        {/* 3. Promotional Cards Grid Images */}
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-ink-200/80 shadow-2xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-ink-200 gap-3">
+            <div>
+              <h3 className="font-serif text-lg font-bold text-plum-950">Promotional Cards Grid Images</h3>
+              <p className="text-xs text-ink-500 mt-0.5">Customize the 3 promotional cards displayed on the storefront homepage (Gift Hampers, Combos, DIY Flowers).</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 bg-plum-900 hover:bg-plum-800 text-white font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs self-start sm:self-auto cursor-pointer disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              <span>Save Cards</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Card 1: Gift Hampers */}
+            <div className="p-4 rounded-2xl border border-ink-200/80 bg-cream-50/30 flex flex-col justify-between space-y-3">
+              <div>
+                <span className="inline-block bg-plum-100 text-plum-900 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1">
+                  Card 1
+                </span>
+                <h4 className="font-semibold text-xs text-plum-950">Gift Hampers</h4>
+                <p className="text-[11px] text-ink-500 mb-2">Card floral background image</p>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="https://res.cloudinary.com/..."
+                    value={cmsData.promoGiftHampersImage}
+                    onChange={(e) => setCmsData({ ...cmsData, promoGiftHampersImage: e.target.value })}
+                    className="w-full bg-white border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800"
+                  />
+                  <label className="bg-plum-900 hover:bg-plum-950 text-white px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 cursor-pointer transition-colors shadow-2xs">
+                    <Upload className="w-3.5 h-3.5" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, { type: 'promoGiftHampers' })}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker({ type: 'promoGiftHampers' })}
+                    className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs shrink-0 cursor-pointer transition-colors"
+                    title="Select from Media Library"
+                  >
+                    <ImageIcon className="w-4 h-4 text-plum-800" />
+                  </button>
+                </div>
+              </div>
+              {cmsData.promoGiftHampersImage && (
+                <div className="h-28 w-full rounded-xl overflow-hidden border border-ink-200 bg-cream-100 relative">
+                  <img
+                    src={cmsData.promoGiftHampersImage}
+                    alt="Gift Hampers Card"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Card 2: Combos */}
+            <div className="p-4 rounded-2xl border border-ink-200/80 bg-cream-50/30 flex flex-col justify-between space-y-3">
+              <div>
+                <span className="inline-block bg-plum-100 text-plum-900 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1">
+                  Card 2
+                </span>
+                <h4 className="font-semibold text-xs text-plum-950">Combos</h4>
+                <p className="text-[11px] text-ink-500 mb-2">Card floral background image</p>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="https://res.cloudinary.com/..."
+                    value={cmsData.promoCombosImage}
+                    onChange={(e) => setCmsData({ ...cmsData, promoCombosImage: e.target.value })}
+                    className="w-full bg-white border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800"
+                  />
+                  <label className="bg-plum-900 hover:bg-plum-950 text-white px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 cursor-pointer transition-colors shadow-2xs">
+                    <Upload className="w-3.5 h-3.5" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, { type: 'promoCombos' })}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker({ type: 'promoCombos' })}
+                    className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs shrink-0 cursor-pointer transition-colors"
+                    title="Select from Media Library"
+                  >
+                    <ImageIcon className="w-4 h-4 text-plum-800" />
+                  </button>
+                </div>
+              </div>
+              {cmsData.promoCombosImage && (
+                <div className="h-28 w-full rounded-xl overflow-hidden border border-ink-200 bg-cream-100 relative">
+                  <img
+                    src={cmsData.promoCombosImage}
+                    alt="Combos Card"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Card 3: DIY Flowers */}
+            <div className="p-4 rounded-2xl border border-ink-200/80 bg-cream-50/30 flex flex-col justify-between space-y-3">
+              <div>
+                <span className="inline-block bg-plum-100 text-plum-900 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1">
+                  Card 3
+                </span>
+                <h4 className="font-semibold text-xs text-plum-950">DIY Flowers</h4>
+                <p className="text-[11px] text-ink-500 mb-2">Card floral background image</p>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="https://res.cloudinary.com/..."
+                    value={cmsData.promoDiyFlowersImage}
+                    onChange={(e) => setCmsData({ ...cmsData, promoDiyFlowersImage: e.target.value })}
+                    className="w-full bg-white border border-ink-200 rounded-xl px-3 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-800/20 focus:border-plum-800"
+                  />
+                  <label className="bg-plum-900 hover:bg-plum-950 text-white px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 cursor-pointer transition-colors shadow-2xs">
+                    <Upload className="w-3.5 h-3.5" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, { type: 'promoDiyFlowers' })}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPicker({ type: 'promoDiyFlowers' })}
+                    className="bg-cream-100 hover:bg-cream-200 text-plum-950 border border-ink-200 p-2 rounded-xl text-xs shrink-0 cursor-pointer transition-colors"
+                    title="Select from Media Library"
+                  >
+                    <ImageIcon className="w-4 h-4 text-plum-800" />
+                  </button>
+                </div>
+              </div>
+              {cmsData.promoDiyFlowersImage && (
+                <div className="h-28 w-full rounded-xl overflow-hidden border border-ink-200 bg-cream-100 relative">
+                  <img
+                    src={cmsData.promoDiyFlowersImage}
+                    alt="DIY Flowers Card"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Homepage Section Visibility Toggles */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-ink-200/80 shadow-2xs space-y-5">
           <div className="pb-4 border-b border-ink-200">
             <h3 className="font-serif text-lg font-bold text-plum-950">Section Visibility Control</h3>
@@ -869,8 +1072,19 @@ export default function AdminCMSPage() {
       <MediaPickerModal
         isOpen={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
-        onSelect={(url) => {
+        onSelect={async (url) => {
           applyMediaUrl(pickerTarget, url);
+          if (['promoGiftHampers', 'promoCombos', 'promoDiyFlowers'].includes(pickerTarget.type)) {
+            const nextCms = {
+              ...cmsData,
+              promoGiftHampersImage: pickerTarget.type === 'promoGiftHampers' ? url : cmsData.promoGiftHampersImage,
+              promoCombosImage: pickerTarget.type === 'promoCombos' ? url : cmsData.promoCombosImage,
+              promoDiyFlowersImage: pickerTarget.type === 'promoDiyFlowers' ? url : cmsData.promoDiyFlowersImage,
+            };
+            await saveCmsConfigurationAction(nextCms);
+            setFeedback('✨ Promotional card image selected and saved live to storefront!');
+            setTimeout(() => setFeedback(null), 3000);
+          }
         }}
       />
     </div>

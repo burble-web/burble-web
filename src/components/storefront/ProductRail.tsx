@@ -45,54 +45,55 @@ export function ProductRail({ title, subtitle, products, viewAllLink = '/product
             )}
           </div>
 
-          {/* Right: Circular Navigation Arrows + View All */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            {/* Circular Carousel Controls (visible on mobile) */}
-            <div className="flex items-center gap-1 sm:hidden">
-              <button
-                type="button"
-                onClick={scrollPrev}
-                disabled={!canScrollPrev}
-                className="w-7 h-7 rounded-full border border-plum-200/90 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-plum-50 active:scale-95 transition-all"
-                aria-label="Previous product"
-              >
-                <ChevronLeft className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-              </button>
-              <button
-                type="button"
-                onClick={scrollNext}
-                disabled={!canScrollNext}
-                className="w-7 h-7 rounded-full border border-plum-200/90 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-plum-50 active:scale-95 transition-all"
-                aria-label="Next product"
-              >
-                <ChevronRight className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-
-            <Link
-              href={viewAllLink}
-              className="group flex items-center space-x-1 rtl:space-x-reverse text-xs font-semibold text-plum-800 hover:text-plum-700 transition-colors whitespace-nowrap ps-0.5 sm:ps-1"
-            >
-              <span>{t.common.viewAll}</span>
-              <ArrowRight className={`w-3 h-3 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
-            </Link>
-          </div>
+          {/* Right: View All */}
+          <Link
+            href={viewAllLink}
+            className="group flex items-center space-x-1 rtl:space-x-reverse text-xs font-semibold text-plum-800 hover:text-plum-700 transition-colors whitespace-nowrap shrink-0 ps-0.5 sm:ps-1"
+          >
+            <span>{t.common.viewAll}</span>
+            <ArrowRight className={`w-3 h-3 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+          </Link>
         </div>
 
-        {/* Mobile: 2 Equal-Sized Product Cards Side-by-Side Horizontal Carousel (sm:hidden) */}
-        <div
-          ref={containerRef}
-          className="flex sm:hidden overflow-x-auto scroll-smooth snap-x snap-mandatory gap-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden items-stretch"
-        >
-          {products.map((product) => (
-            <div
-              key={product.id}
-              style={{ width: 'calc(50% - 6px)', flex: '0 0 calc(50% - 6px)' }}
-              className="min-w-0 max-w-[calc(50%-6px)] shrink-0 snap-start flex flex-col"
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
+        {/* Mobile: 2 Equal-Sized Product Cards Side-by-Side Horizontal Carousel with Left/Right Center Arrows (sm:hidden) */}
+        <div className="relative sm:hidden">
+          {/* Previous Arrow (Left Side) */}
+          <button
+            type="button"
+            onClick={scrollPrev}
+            disabled={!canScrollPrev}
+            className="absolute -start-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+            aria-label="Previous product"
+          >
+            <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Carousel Track */}
+          <div
+            ref={containerRef}
+            className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden items-stretch"
+          >
+            {products.map((product) => (
+              <div
+                key={product.id}
+                style={{ width: 'calc(50% - 6px)', flex: '0 0 calc(50% - 6px)' }}
+                className="min-w-0 max-w-[calc(50%-6px)] shrink-0 snap-start flex flex-col"
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+
+          {/* Next Arrow (Right Side) */}
+          <button
+            type="button"
+            onClick={scrollNext}
+            disabled={!canScrollNext}
+            className="absolute -end-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+            aria-label="Next product"
+          >
+            <ChevronRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+          </button>
         </div>
 
         {/* Desktop & Tablet: Standard Responsive Grid (hidden on mobile) */}

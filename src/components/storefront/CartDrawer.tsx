@@ -30,8 +30,8 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         onClick={onClose}
       />
 
-      <div className={`fixed inset-y-0 ${isRtl ? 'left-0 pr-10' : 'right-0 pl-10'} max-w-full flex`}>
-        <div className="w-screen max-w-md bg-cream-100 shadow-2xl flex flex-col justify-between">
+      <div className={`fixed inset-y-0 ${isRtl ? 'left-0 sm:pr-10' : 'right-0 sm:pl-10'} w-full sm:w-auto max-w-full flex`}>
+        <div className="w-full sm:w-screen sm:max-w-md bg-cream-100 shadow-2xl flex flex-col justify-between h-full">
           
           {/* Header */}
           <div className="p-6 border-b border-ink-100 bg-white flex items-center justify-between">

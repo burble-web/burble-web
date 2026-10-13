@@ -4,9 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, Heart, ShoppingBag, User, Menu, X, ChevronDown, Flower } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, ChevronDown, Flower, Loader2, ArrowRight } from 'lucide-react';
 import { useCart } from '@/lib/cart/store';
 import { useLocale } from '@/lib/i18n/context';
+import { searchProductsAction } from '@/app/actions/product';
 import { CartDrawer } from './CartDrawer';
 import { LanguageToggle } from './LanguageToggle';
 
@@ -16,17 +17,51 @@ export function Header() {
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const { totalItemsCount, wishlist } = useCart();
-  const { t, isRtl, locale } = useLocale();
+  const { totalItemsCount } = useCart();
+  const { t, isRtl, locale, formatPrice, getLocalized } = useLocale();
 
   useEffect(() => {
     if (searchOpen) {
       searchInputRef.current?.focus();
+    } else {
+      setSearchQuery('');
+      setSearchResults([]);
     }
   }, [searchOpen]);
+
+  // Debounced live instant search
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await searchProductsAction(trimmed);
+        if (res.success && res.products) {
+          setSearchResults(res.products);
+        } else {
+          setSearchResults([]);
+        }
+      } catch (err) {
+        console.error('Search error:', err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 220);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,12 +85,17 @@ export function Header() {
     };
   }, [searchOpen]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchOpen(false);
     }
+  };
+
+  const handleSelectProduct = (slug: string) => {
+    setSearchOpen(false);
+    router.push(`/products/${slug}`);
   };
 
   return (
@@ -167,37 +207,115 @@ export function Header() {
                   <Search className="w-5 h-5" />
                 </button>
 
-                {/* Compact Search Popover */}
+                {/* Search Popover with Live Instant Suggestions */}
                 {searchOpen && (
-                  <div className="absolute top-full end-0 mt-3 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-ink-100 p-2.5 z-50">
+                  <div className="absolute top-full end-0 mt-3 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-ink-100 p-3 z-50 overflow-hidden">
                     <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-                      <Search className="absolute start-3 w-4 h-4 text-ink-400 pointer-events-none" />
+                      <button
+                        type="submit"
+                        className="absolute start-2.5 p-1 text-ink-500 hover:text-plum-800 transition-colors"
+                        aria-label="Search"
+                      >
+                        <Search className="w-4 h-4" />
+                      </button>
                       <input
                         ref={searchInputRef}
                         type="text"
                         placeholder={t.common.searchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-cream-50 border border-ink-100 rounded-full ps-9 pe-8 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-700/30 focus:border-plum-700 transition-all"
+                        className="w-full bg-cream-50 border border-ink-200 rounded-full ps-9 pe-9 py-2 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-plum-700/30 focus:border-plum-700 transition-all"
                       />
-                      {searchQuery ? (
+                      {isSearching ? (
+                        <div className="absolute end-2.5 p-1 text-ink-400">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-plum-800" />
+                        </div>
+                      ) : searchQuery ? (
                         <button
                           type="button"
-                          onClick={() => setSearchQuery('')}
+                          onClick={() => {
+                            setSearchQuery('');
+                            setSearchResults([]);
+                          }}
                           className="absolute end-2.5 p-1 text-ink-400 hover:text-ink-700"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setSearchOpen(false)}
-                          className="absolute end-2.5 p-1 text-ink-400 hover:text-ink-700"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      ) : null}
                     </form>
+
+                    {/* Live Results Dropdown */}
+                    {searchQuery.trim().length >= 2 && (
+                      <div className="mt-3 pt-3 border-t border-ink-100 space-y-1">
+                        {searchResults.length > 0 ? (
+                          <>
+                            <div className="text-[10px] font-bold text-ink-400 uppercase tracking-wider px-2 mb-1">
+                              {locale === 'ar' ? 'المنتجات المقترحة' : 'Suggested Products'}
+                            </div>
+                            <div className="max-h-64 overflow-y-auto space-y-1">
+                              {searchResults.map((product) => {
+                                const pName = getLocalized(product.name, product.name_ar);
+                                return (
+                                  <button
+                                    key={product.id}
+                                    type="button"
+                                    onClick={() => handleSelectProduct(product.slug)}
+                                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-plum-50/80 transition-colors text-start group"
+                                  >
+                                    <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-cream-100 shrink-0 border border-ink-100">
+                                      {product.main_image_url ? (
+                                        <Image
+                                          src={product.main_image_url}
+                                          alt={pName}
+                                          fill
+                                          className="object-cover group-hover:scale-105 transition-transform"
+                                        />
+                                      ) : null}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-semibold text-plum-950 truncate group-hover:text-plum-800">
+                                        {pName}
+                                      </p>
+                                      <p className="text-[11px] font-bold text-plum-800">
+                                        {formatPrice(product.price)}
+                                      </p>
+                                    </div>
+                                    <ArrowRight className="w-3.5 h-3.5 text-ink-400 group-hover:text-plum-800 rtl:rotate-180 transition-transform shrink-0" />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleSearchSubmit()}
+                              className="w-full mt-2 pt-2 border-t border-ink-100 text-center text-xs font-semibold text-plum-800 hover:text-plum-950 py-1.5 hover:bg-plum-50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                            >
+                              <span>
+                                {locale === 'ar'
+                                  ? `عرض كافة النتائج لـ "${searchQuery}"`
+                                  : `View all results for "${searchQuery}"`}
+                              </span>
+                              <ArrowRight className="w-3 h-3 rtl:rotate-180" />
+                            </button>
+                          </>
+                        ) : !isSearching ? (
+                          <div className="py-4 text-center">
+                            <p className="text-xs text-ink-600 font-medium">
+                              {locale === 'ar'
+                                ? `لم يتم العثور على زهور مطابقة لـ "${searchQuery}"`
+                                : `No flowers found for "${searchQuery}"`}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleSearchSubmit()}
+                              className="mt-2 text-xs text-plum-800 hover:underline font-semibold"
+                            >
+                              {locale === 'ar' ? 'البحث في المتجر بالكامل' : 'Search full catalog'}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -207,28 +325,7 @@ export function Header() {
                 <LanguageToggle />
               </div>
 
-              {/* User icon: desktop only (on mobile it lives in the drawer menu) */}
-              <Link
-                href="/admin/login"
-                className="hidden lg:block p-2 text-ink-700 hover:text-plum-800 transition-colors rounded-full hover:bg-plum-50"
-                title={t.nav.adminPortal}
-              >
-                <User className="w-5 h-5" />
-              </Link>
-
-              <Link
-                href="/products"
-                className="relative p-2 text-ink-700 hover:text-plum-800 transition-colors rounded-full hover:bg-plum-50"
-                title={t.nav.wishlist}
-              >
-                <Heart className="w-5 h-5" />
-                {wishlist.length > 0 && (
-                  <span className="absolute top-1 end-1 bg-plum-800 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                    {wishlist.length}
-                  </span>
-                )}
-              </Link>
-
+              {/* Shopping Cart Button */}
               <button
                 onClick={() => setCartDrawerOpen(true)}
                 className="relative p-2 text-plum-900 hover:text-plum-800 transition-colors rounded-full hover:bg-plum-50 focus:outline-none"

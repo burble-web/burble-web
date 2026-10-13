@@ -3,13 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Product } from '@/types';
 import { useLocale } from '@/lib/i18n/context';
 import { ProductCard } from './ProductCard';
 
 interface PremiumBannerSectionProps {
   products: Product[];
+  bannerImageUrl?: string;
 }
 
 const DEFAULT_VASE_PRODUCTS: Product[] = [
@@ -69,49 +70,51 @@ const DEFAULT_VASE_PRODUCTS: Product[] = [
   },
 ];
 
-export function PremiumBannerSection({ products }: PremiumBannerSectionProps) {
+export function PremiumBannerSection({ products, bannerImageUrl }: PremiumBannerSectionProps) {
   const { t, isRtl, locale } = useLocale();
 
   const displayProducts = products && products.length >= 3 ? products.slice(0, 3) : DEFAULT_VASE_PRODUCTS;
 
   // Dedicated reference image: purple BURBLE flower box, pink & cream roses, soft lavender backdrop
-  const bannerImage = 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455268/burble/premium_banner.jpg';
+  
 
   return (
-    <section className="py-12 bg-cream-100">
+    <section className="py-8 lg:py-12 bg-cream-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* items-stretch: both columns get the same height as the left image card */}
+        {/* items-stretch: both columns get the same height as the left image card (desktop) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-stretch">
 
-          {/* Left Side: Premium Collections Wide Background Image Card */}
-          <div className="lg:col-span-7 relative rounded-2xl overflow-hidden border border-plum-200/70 shadow-xs min-h-[340px] sm:min-h-[380px] lg:min-h-[400px] flex items-center p-6 sm:p-10 group">
+          {/* Premium Collections banner card.
+              Mobile: shown BELOW the products (order-2), dark plum overlay + white text so it is readable.
+              Desktop (lg+): unchanged, left side with light lavender overlay + dark text. */}
+          <div className="order-2 lg:order-1 lg:col-span-7 relative rounded-2xl overflow-hidden border border-plum-200/70 shadow-xs min-h-[280px] sm:min-h-[380px] lg:min-h-[400px] flex items-center p-5 sm:p-10 group">
 
             <div className="absolute inset-0 z-0">
               <Image
-                src={bannerImage}
+                src={bannerImageUrl || "/images/Romantic-bg.png"}
                 alt="Premium Collections"
                 fill
                 priority
                 className="object-cover object-right sm:object-center group-hover:scale-103 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#EDE2F2] via-[#EDE2F2]/90 via-45% to-transparent rtl:bg-gradient-to-l rtl:from-[#EDE2F2] rtl:via-[#EDE2F2]/90 rtl:via-45% rtl:to-transparent pointer-events-none" />
+              {/* Mobile: dark plum fade so white text is visible. Desktop: original light lavender fade. */}
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-r rtl:bg-gradient-to-l from-plum-950/90 via-plum-900/70 via-50% to-transparent lg:from-[#EDE2F2] lg:via-[#EDE2F2]/90 lg:via-25% lg:to-transparent" />
             </div>
 
-            <div className="relative z-10 max-w-xs sm:max-w-sm">
-              <div className="inline-flex items-center space-x-1.5 rtl:space-x-reverse bg-plum-900/10 border border-plum-900/20 text-plum-900 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3 backdrop-blur-xs">
-               
+            <div className="relative z-10 max-w-[200px] sm:max-w-sm">
+              <div className="inline-flex items-center space-x-1.5 rtl:space-x-reverse bg-white/15 border border-white/30 text-white lg:bg-plum-900/10 lg:border-plum-900/20 lg:text-plum-900 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3 backdrop-blur-xs">
                 <span>{locale === 'ar' ? 'تشكيلة فاخرة' : 'LUXE FLORALS'}</span>
               </div>
 
-              <h3 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-plum-950 mb-3 leading-[1.1] tracking-tight">
+              <h3 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white lg:text-plum-950 mb-3 leading-[1.1] tracking-tight">
                 {locale === 'ar' ? 'التشكيلة الفاخرة' : 'Premium Collections'}
               </h3>
-              <p className="text-xs sm:text-sm text-plum-900/80 font-normal leading-relaxed mb-6">
+              <p className="text-xs sm:text-sm text-white/90 lg:text-plum-900/80 font-normal leading-relaxed mb-5 lg:mb-6">
                 {locale === 'ar' ? 'تنسيقات زهور حصرية واستثنائية لأجمل اللحظات.' : 'Exclusive floral arrangements for extraordinary moments.'}
               </p>
               <Link
                 href="/products?category=premium-collections"
-                className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-plum-900 hover:bg-plum-800 text-white text-xs font-semibold px-6 py-3 rounded-full shadow-md transition-all hover:scale-105 active:scale-95"
+                className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-white text-plum-900 hover:bg-cream-100 lg:bg-plum-900 lg:hover:bg-plum-800 lg:text-white text-xs font-semibold px-6 py-3 rounded-full shadow-md transition-all hover:scale-105 active:scale-95"
               >
                 <span>{locale === 'ar' ? 'استكشف التشكيلة' : 'Explore Premium'}</span>
                 <ArrowRight className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
@@ -119,8 +122,9 @@ export function PremiumBannerSection({ products }: PremiumBannerSectionProps) {
             </div>
           </div>
 
-          {/* Right Side: vertically centered against the left image card */}
-          <div className="lg:col-span-5 flex flex-col justify-center">
+          {/* Flowers in Vase products.
+              Mobile: shown at the TOP (order-1). Desktop: right side, vertically centered. */}
+          <div className="order-1 lg:order-2 lg:col-span-5 flex flex-col justify-center">
             <div className="flex items-end justify-between mb-4">
               <div>
                 <h3 className="font-serif text-xl sm:text-2xl font-bold text-plum-900 leading-tight">

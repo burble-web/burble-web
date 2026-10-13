@@ -56,8 +56,46 @@ export function HeroSection({ section }: HeroSectionProps) {
 
   // Video or Image mode
   const mediaType = content.media_type || (content.video_url ? 'video' : 'images');
-  const videoUrlDesktop = content.video_url || '';
-  const videoUrlMobile = content.video_mobile_url || videoUrlDesktop;
+  const configuredDesktopVideo = content.video_url || '';
+  const configuredMobileVideo = content.video_mobile_url || configuredDesktopVideo;
+
+  const [mobileVideoError, setMobileVideoError] = useState(false);
+  const [desktopVideoError, setDesktopVideoError] = useState(false);
+
+  // If mobile video fails to load, gracefully fallback to desktop video
+  const effectiveMobileVideo = !mobileVideoError && configuredMobileVideo
+    ? configuredMobileVideo
+    : (!desktopVideoError && configuredDesktopVideo ? configuredDesktopVideo : '');
+
+  const effectiveDesktopVideo = !desktopVideoError && configuredDesktopVideo
+    ? configuredDesktopVideo
+    : (!mobileVideoError && configuredMobileVideo ? configuredMobileVideo : '');
+
+  const mobileVideoRef = useRef<HTMLVideoElement>(null);
+  const desktopVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Autoplay reliability for iOS Safari & Android Chrome (requires DOM muted = true and explicit play())
+  useEffect(() => {
+    if (mobileVideoRef.current) {
+      mobileVideoRef.current.muted = true;
+      mobileVideoRef.current.defaultMuted = true;
+      const playPromise = mobileVideoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+    }
+  }, [effectiveMobileVideo]);
+
+  useEffect(() => {
+    if (desktopVideoRef.current) {
+      desktopVideoRef.current.muted = true;
+      desktopVideoRef.current.defaultMuted = true;
+      const playPromise = desktopVideoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+    }
+  }, [effectiveDesktopVideo]);
 
   // Determine Slides (Up to 3 images moving one by one)
   const configuredSlides = Array.isArray(content.slides) && content.slides.length > 0
@@ -90,6 +128,9 @@ export function HeroSection({ section }: HeroSectionProps) {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
 
+  const fallbackDesktopPoster = slides[0]?.desktop_image || slides[0]?.desktopImage || DEFAULT_SLIDES[0].desktop_image;
+  const fallbackMobilePoster = slides[0]?.mobile_image || slides[0]?.mobileImage || fallbackDesktopPoster;
+
   return (
     <section
       onMouseEnter={() => setIsHovered(true)}
@@ -97,28 +138,38 @@ export function HeroSection({ section }: HeroSectionProps) {
       className="relative w-full overflow-hidden bg-plum-950 text-white min-h-[600px] md:min-h-[540px] lg:min-h-[620px] flex items-end md:items-center select-none"
     >
       {/* 1. MEDIA LAYER: Video Mode vs Rotating 3 Images */}
-      {mediaType === 'video' && (videoUrlDesktop || videoUrlMobile) ? (
+      {mediaType === 'video' && (effectiveDesktopVideo || effectiveMobileVideo) ? (
         <div className="absolute inset-0 z-0 overflow-hidden">
-          {/* Laptop 16:9 Video */}
-          {videoUrlDesktop && (
+          {/* Laptop Screen Video */}
+          {effectiveDesktopVideo && (
             <video
-              src={videoUrlDesktop}
+              ref={desktopVideoRef}
+              src={effectiveDesktopVideo}
               autoPlay
               loop
               muted
               playsInline
-              className="hidden md:block w-full h-full object-cover aspect-video brightness-90"
+              preload="auto"
+              poster={fallbackDesktopPoster}
+              onError={() => setDesktopVideoError(true)}
+              className="hidden md:block w-full h-full object-cover brightness-90"
             />
           )}
-          {/* Mobile 9:16 Video */}
-          <video
-            src={videoUrlMobile || videoUrlDesktop}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="md:hidden w-full h-full object-cover aspect-[9/16] brightness-90"
-          />
+          {/* Mobile Screen Video */}
+          {effectiveMobileVideo && (
+            <video
+              ref={mobileVideoRef}
+              src={effectiveMobileVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              poster={fallbackMobilePoster}
+              onError={() => setMobileVideoError(true)}
+              className="md:hidden w-full h-full object-cover brightness-90"
+            />
+          )}
           {/* Readability Gradient Overlays */}
           <div className={`hidden md:block absolute inset-0 ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/95 via-plum-950/60 to-transparent w-full md:w-3/4`} />
           <div className="md:hidden absolute inset-0 bg-gradient-to-t from-plum-950/95 via-plum-950/70 to-transparent" />

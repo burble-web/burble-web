@@ -6,7 +6,6 @@ import { FeatureBar } from '@/components/storefront/FeatureBar';
 import { ProductRail } from '@/components/storefront/ProductRail';
 import { OccasionSection } from '@/components/storefront/OccasionSection';
 import { PremiumBannerSection } from '@/components/storefront/PremiumBannerSection';
-import { ShopByFlowerSection } from '@/components/storefront/ShopByFlowerSection';
 import { PromoCardsGrid } from '@/components/storefront/PromoCardsGrid';
 import { CollectionsSection } from '@/components/storefront/CollectionsSection';
 import { SocialProofSection } from '@/components/storefront/SocialProofSection';
@@ -45,7 +44,6 @@ export default async function StorefrontPage() {
   const handBouquets = showHandBouquets ? await getProducts({ categorySlug: 'hand-bouquets', limit: 5 }) : [];
   const vaseFlowers = showFlowersInVase ? await getProducts({ categorySlug: 'flowers-in-vase', limit: 3 }) : [];
   const occasions = showOccasions ? await getCollections('occasion') : [];
-  const flowers = await getCollections('flower');
   const collections = await getCollections('collection');
   const blogPosts = showBlog ? await getBlogPosts(3) : [];
   const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
@@ -109,16 +107,14 @@ export default async function StorefrontPage() {
 
         {/* 8 & 9. Premium Collection Split Banner + Flowers in Vase */}
         {showFlowersInVase && vaseFlowers.length > 0 && (
-          <PremiumBannerSection products={vaseFlowers} />
-        )}
-
-        {/* 10. Shop by Flower Circles */}
-        {flowers.length > 0 && (
-          <ShopByFlowerSection flowers={flowers} />
+          <PremiumBannerSection
+            products={vaseFlowers}
+            bannerImageUrl={sections.find((s) => s.section_key === 'flowers_in_vase')?.content_json?.banner_image}
+          />
         )}
 
         {/* 11. Promotional Category Cards Grid (Hampers, Combos, DIY) */}
-        <PromoCardsGrid categories={categories} />
+        <PromoCardsGrid categories={categories} section={sections.find((s) => s.section_key === 'promo_cards')} />
 
         {/* 12. Our Collections Circles */}
         {collections.length > 0 && (
