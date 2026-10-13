@@ -212,3 +212,54 @@ export async function toggleProductActiveAction(id: string, active: boolean) {
     return { success: false, error: err?.message || 'Failed to update status.' };
   }
 }
+
+export async function searchProductsAction(query: string): Promise<{
+  success: boolean;
+  products: Array<{
+    id: string;
+    name: string;
+    name_ar?: string | null;
+    slug: string;
+    price: number;
+    compare_at_price?: number | null;
+    main_image_url?: string;
+  }>;
+}> {
+  const clean = (query || '').trim();
+  if (!clean) {
+    return { success: true, products: [] };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name, name_ar, slug, price, compare_at_price, main_image_url')
+      .eq('active', true)
+      .or(`name.ilike.%${clean}%,name_ar.ilike.%${clean}%,description.ilike.%${clean}%,description_ar.ilike.%${clean}%`)
+      .order('sort_order', { ascending: true })
+      .limit(6);
+
+    if (error || !data) {
+      const { data: allActive } = await supabase
+        .from('products')
+        .select('id, name, name_ar, slug, price, compare_at_price, main_image_url')
+        .eq('active', true);
+
+      const qLower = clean.toLowerCase();
+      const filtered = (allActive || []).filter((p) => {
+        return (
+          (p.name && p.name.toLowerCase().includes(qLower)) ||
+          (p.name_ar && p.name_ar.toLowerCase().includes(qLower))
+        );
+      }).slice(0, 6);
+
+      return { success: true, products: filtered };
+    }
+
+    return { success: true, products: data };
+  } catch (err: any) {
+    console.error('searchProductsAction error:', err);
+    return { success: false, products: [] };
+  }
+}

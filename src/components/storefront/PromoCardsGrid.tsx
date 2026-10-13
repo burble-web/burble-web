@@ -5,14 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
-import { Category } from '@/types';
+import { Category, HomepageSection } from '@/types';
 import { useCarousel } from './carousel-helper';
 
 interface PromoCardsGridProps {
   categories?: Category[];
+  section?: HomepageSection;
 }
 
-export function PromoCardsGrid({ categories = [] }: PromoCardsGridProps) {
+export function PromoCardsGrid({ categories = [], section }: PromoCardsGridProps) {
   const { t, isRtl } = useLocale();
   const {
     containerRef,
@@ -28,27 +29,31 @@ export function PromoCardsGrid({ categories = [] }: PromoCardsGridProps) {
   const combosCategory = categories.find((c) => c.slug === 'combos');
   const diyCategory = categories.find((c) => c.slug === 'diy-flowers');
 
+  const giftImage = section?.content_json?.gift_hampers_image || giftCategory?.image_url || '';
+  const combosImage = section?.content_json?.combos_image || combosCategory?.image_url || '';
+  const diyImage = section?.content_json?.diy_flowers_image || diyCategory?.image_url || '';
+
   const cards = [
     {
       title: t.sections.giftHampersTitle,
       subtitle: t.sections.giftHampersSubtitle,
       buttonText: t.sections.shopGiftsCta,
       link: '/products?category=gift-hampers',
-      imageUrl: giftCategory?.image_url || 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455264/burble/product_pastel_bouquet.jpg',
+      imageUrl: giftImage,
     },
     {
       title: t.sections.combosTitle,
       subtitle: t.sections.combosSubtitle,
       buttonText: t.sections.shopCombosCta,
       link: '/products?category=combos',
-      imageUrl: combosCategory?.image_url || 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455263/burble/product_red_roses.jpg',
+      imageUrl: combosImage,
     },
     {
       title: t.sections.diyFlowersTitle,
       subtitle: t.sections.diyFlowersSubtitle,
       buttonText: t.sections.shopDiyCta,
       link: '/products?category=diy-flowers',
-      imageUrl: diyCategory?.image_url || 'https://res.cloudinary.com/ivsez8nl/image/upload/v1791455266/burble/product_sunshine_bouquet.jpg',
+      imageUrl: diyImage,
     },
   ];
 
@@ -64,7 +69,7 @@ export function PromoCardsGrid({ categories = [] }: PromoCardsGridProps) {
             className="object-cover object-right group-hover:scale-105 transition-transform duration-700"
           />
           {/* Soft luxury cream gradient overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cream-100 via-cream-100/90 to-cream-100/20 rtl:bg-gradient-to-l rtl:from-cream-100 rtl:via-cream-100/90 rtl:to-cream-100/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cream-100 via-cream-100/40 to-cream-100/20 rtl:bg-gradient-to-l rtl:from-cream-100 rtl:via-cream-100/90 rtl:to-cream-100/20 pointer-events-none" />
         </div>
       )}
 
@@ -91,60 +96,60 @@ export function PromoCardsGrid({ categories = [] }: PromoCardsGridProps) {
     <section className="py-8 sm:py-12 bg-cream-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Mobile: Single-card horizontal carousel with touch swiping & controls (lg:hidden) */}
+        {/* Mobile: Single-card horizontal carousel with touch swiping & left/right centered arrows (lg:hidden) */}
         <div className="block lg:hidden">
-          <div
-            ref={containerRef}
-            className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {cards.map((card, idx) => (
-              <div
-                key={idx}
-                className="w-full min-w-full max-w-full shrink-0 snap-center relative rounded-3xl overflow-hidden p-6 sm:p-8 min-h-[220px] flex flex-col justify-center border border-ink-100/60 shadow-xs group bg-cream-100"
-              >
-                {renderCardContent(card)}
-              </div>
-            ))}
-          </div>
+          <div className="relative">
+            {/* Previous Arrow (Left Side) */}
+            <button
+              type="button"
+              onClick={scrollPrev}
+              disabled={!canScrollPrev}
+              className="absolute -start-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+              aria-label="Previous promotional card"
+            >
+              <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+            </button>
 
-          {/* Mobile Carousel Navigation Arrows & Indicators */}
-          <div className="flex items-center justify-between mt-4 px-1">
-            {/* Dots */}
-            <div className="flex items-center gap-1.5">
-              {cards.map((_, idx) => (
-                <button
+            {/* Carousel Track */}
+            <div
+              ref={containerRef}
+              className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {cards.map((card, idx) => (
+                <div
                   key={idx}
-                  type="button"
-                  onClick={() => scrollToIndex(idx)}
-                  aria-label={`Go to slide ${idx + 1}`}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    activeIndex === idx ? 'w-5 bg-plum-800' : 'w-1.5 bg-plum-200 hover:bg-plum-300'
-                  }`}
-                />
+                  className="w-full min-w-full max-w-full shrink-0 snap-center relative rounded-3xl overflow-hidden p-6 sm:p-8 min-h-[220px] flex flex-col justify-center border border-ink-100/60 shadow-xs group bg-cream-100"
+                >
+                  {renderCardContent(card)}
+                </div>
               ))}
             </div>
 
-            {/* Arrows */}
-            <div className="flex items-center gap-2">
+            {/* Next Arrow (Right Side) */}
+            <button
+              type="button"
+              onClick={scrollNext}
+              disabled={!canScrollNext}
+              className="absolute -end-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+              aria-label="Next promotional card"
+            >
+              <ChevronRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          {/* Mobile Carousel Indicators (Dots only, no bottom arrows) */}
+          <div className="flex items-center justify-center gap-1.5 mt-3.5">
+            {cards.map((_, idx) => (
               <button
+                key={idx}
                 type="button"
-                onClick={scrollPrev}
-                disabled={!canScrollPrev}
-                className="w-7 h-7 rounded-full border border-plum-200 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all"
-                aria-label="Previous promotional card"
-              >
-                <ChevronLeft className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-              </button>
-              <button
-                type="button"
-                onClick={scrollNext}
-                disabled={!canScrollNext}
-                className="w-7 h-7 rounded-full border border-plum-200 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all"
-                aria-label="Next promotional card"
-              >
-                <ChevronRight className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
+                onClick={() => scrollToIndex(idx)}
+                aria-label={`Go to slide ${idx + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  activeIndex === idx ? 'w-5 bg-plum-800' : 'w-1.5 bg-plum-200 hover:bg-plum-300'
+                }`}
+              />
+            ))}
           </div>
         </div>
 

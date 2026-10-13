@@ -8,7 +8,6 @@ import { getServerTranslations } from '@/lib/i18n/server';
 import { getLocalizedValue } from '@/lib/i18n/utils';
 import Link from 'next/link';
 
-export const instant = false;
 
 export default async function ProductsPage({
   searchParams,

@@ -120,58 +120,60 @@ export function SocialProofSection({ products = [] }: SocialProofSectionProps) {
             </Link>
           </div>
 
-          {/* Testimonials 1-Card Carousel */}
+          {/* Testimonials 1-Card Carousel with Left/Right Centered Arrows */}
           <div>
-            <div
-              ref={containerRef}
-              className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {reviews.map((m, idx) => (
-                <div
-                  key={m.id}
-                  className="w-full min-w-full max-w-full shrink-0 snap-center"
-                >
-                  {renderReviewCard(m, idx)}
-                </div>
-              ))}
-            </div>
+            <div className="relative">
+              {/* Previous Arrow (Left Side) */}
+              <button
+                type="button"
+                onClick={scrollPrev}
+                disabled={!canScrollPrev}
+                className="absolute -start-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+                aria-label="Previous review"
+              >
+                <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+              </button>
 
-            {/* Testimonials Carousel Controls */}
-            <div className="flex items-center justify-between mt-3 px-1">
-              <div className="flex items-center gap-1.5">
-                {reviews.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => scrollToIndex(idx)}
-                    aria-label={`Go to review ${idx + 1}`}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      activeIndex === idx ? 'w-5 bg-plum-800' : 'w-1.5 bg-plum-200 hover:bg-plum-300'
-                    }`}
-                  />
+              {/* Carousel Track */}
+              <div
+                ref={containerRef}
+                className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {reviews.map((m, idx) => (
+                  <div
+                    key={m.id}
+                    className="w-full min-w-full max-w-full shrink-0 snap-center"
+                  >
+                    {renderReviewCard(m, idx)}
+                  </div>
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Next Arrow (Right Side) */}
+              <button
+                type="button"
+                onClick={scrollNext}
+                disabled={!canScrollNext}
+                className="absolute -end-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-plum-200/90 bg-white/95 text-plum-900 flex items-center justify-center shadow-md disabled:opacity-30 disabled:pointer-events-none hover:bg-plum-50 active:scale-95 transition-all"
+                aria-label="Next review"
+              >
+                <ChevronRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {/* Testimonials Carousel Indicators (Dots only, no bottom arrows) */}
+            <div className="flex items-center justify-center gap-1.5 mt-3.5">
+              {reviews.map((_, idx) => (
                 <button
+                  key={idx}
                   type="button"
-                  onClick={scrollPrev}
-                  disabled={!canScrollPrev}
-                  className="w-7 h-7 rounded-full border border-plum-200 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all"
-                  aria-label="Previous review"
-                >
-                  <ChevronLeft className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-                </button>
-                <button
-                  type="button"
-                  onClick={scrollNext}
-                  disabled={!canScrollNext}
-                  className="w-7 h-7 rounded-full border border-plum-200 bg-white text-plum-900 flex items-center justify-center shadow-xs disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all"
-                  aria-label="Next review"
-                >
-                  <ChevronRight className={`w-3.5 h-3.5 ${isRtl ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
+                  onClick={() => scrollToIndex(idx)}
+                  aria-label={`Go to review ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    activeIndex === idx ? 'w-5 bg-plum-800' : 'w-1.5 bg-plum-200 hover:bg-plum-300'
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>

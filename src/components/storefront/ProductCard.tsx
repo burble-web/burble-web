@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, ShoppingBag, Check } from 'lucide-react';
+import { ShoppingBag, Check } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/lib/cart/store';
 import { useLocale } from '@/lib/i18n/context';
@@ -13,10 +13,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addItem, toggleWishlist, isInWishlist } = useCart();
+  const { addItem } = useCart();
   const { t, formatPrice, getLocalized } = useLocale();
   const [added, setAdded] = React.useState(false);
-  const isWishlisted = isInWishlist(product.id);
 
   const productName = getLocalized(product.name, product.name_ar);
 
@@ -26,12 +25,6 @@ export function ProductCard({ product }: ProductCardProps) {
     addItem(product, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
-  };
-
-  const handleToggleWishlist = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleWishlist(product.id);
   };
 
   return (
@@ -72,19 +65,6 @@ export function ProductCard({ product }: ProductCardProps) {
               {t.product.newBadge}
             </span>
           ) : null}
-
-          {/* Wishlist Heart Button */}
-          <button
-            onClick={handleToggleWishlist}
-            className={`absolute top-2 end-2 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full backdrop-blur-md transition-all ${
-              isWishlisted
-                ? 'bg-rose-500 text-white'
-                : 'bg-white/80 text-ink-700 hover:bg-white hover:text-rose-500'
-            }`}
-            aria-label={t.nav.wishlist}
-          >
-            <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-current' : ''}`} />
-          </button>
         </div>
 
         {/* Product Title — Reserved fixed height for 2 lines so cards stay equal height */}
