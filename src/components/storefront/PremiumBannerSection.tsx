@@ -113,7 +113,7 @@ export function PremiumBannerSection({ products, bannerImageUrl }: PremiumBanner
                 {locale === 'ar' ? 'تنسيقات زهور حصرية واستثنائية لأجمل اللحظات.' : 'Exclusive floral arrangements for extraordinary moments.'}
               </p>
               <Link
-                href="/products?category=premium-collections"
+                href={locale === 'ar' ? '/ar/categories/premium-collections' : '/en/categories/premium-collections'}
                 className="inline-flex items-center space-x-2 rtl:space-x-reverse bg-white text-plum-900 hover:bg-cream-100 lg:bg-plum-900 lg:hover:bg-plum-800 lg:text-white text-xs font-semibold px-6 py-3 rounded-full shadow-md transition-all hover:scale-105 active:scale-95"
               >
                 <span>{locale === 'ar' ? 'استكشف التشكيلة' : 'Explore Premium'}</span>
@@ -133,7 +133,7 @@ export function PremiumBannerSection({ products, bannerImageUrl }: PremiumBanner
                 <p className="text-xs text-ink-500 mt-0.5">{t.sections.flowersInVaseSubtitle}</p>
               </div>
               <Link
-                href="/products?category=flowers-in-vase"
+                href={locale === 'ar' ? '/ar/categories/flowers-in-vase' : '/en/categories/flowers-in-vase'}
                 className="group flex items-center space-x-1 rtl:space-x-reverse text-xs font-semibold text-plum-800 hover:text-plum-700 shrink-0"
               >
                 <span>{t.common.viewAll}</span>

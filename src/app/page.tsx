@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { AnnouncementBar } from '@/components/storefront/AnnouncementBar';
 import { Header } from '@/components/storefront/Header';
 import { HeroSection } from '@/components/storefront/HeroSection';
@@ -22,10 +23,63 @@ import {
   getBlogPosts,
   getHomepageSections,
 } from '@/lib/data/queries';
-import { getServerTranslations } from '@/lib/i18n/server';
+import { getServerTranslations, getServerLocale } from '@/lib/i18n/server';
 import { getLocalizedValue } from '@/lib/i18n/utils';
+import { buildHreflangAlternates, buildAbsoluteUrl } from '@/lib/seo/helpers';
+import { FloristJsonLd, WebSiteJsonLd } from '@/components/seo/JsonLd';
 
 export const instant = false;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+
+  const title =
+    locale === 'ar'
+      ? 'زهور بيربل قطر — باقات زهور طبيعية فاخرة وتوصيل سريع في قطر'
+      : 'Burble — Luxury Fresh Flowers & Handcrafted Bouquets in Qatar';
+
+  const description =
+    locale === 'ar'
+      ? 'اكتشف أرقى باقات اليد، زهور الفازات، وتنسيقات الهدايا الفاخرة مع خدمة التوصيل السريع في نفس اليوم في الدوحة، لوسيل، وكافة أنحاء قطر.'
+      : 'Discover handcrafted luxury bouquets, flowers in vase, and bespoke gift hampers. Express same-day flower delivery across Doha, Lusail, and Qatar.';
+
+  const alternates = buildHreflangAlternates({
+    pathWithoutLocale: '',
+    currentLocale: locale,
+  });
+
+  const canonicalUrl =
+    locale === 'ar' ? buildAbsoluteUrl('/ar') : buildAbsoluteUrl('/en');
+
+  return {
+    title,
+    description,
+    alternates,
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'Burble Flowers',
+      locale: locale === 'ar' ? 'ar_QA' : 'en_US',
+      alternateLocale: locale === 'ar' ? ['en_US'] : ['ar_QA'],
+      type: 'website',
+      images: [
+        {
+          url: buildAbsoluteUrl('/opengraph-image.png'),
+          width: 1200,
+          height: 630,
+          alt: 'Burble Flowers Qatar',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [buildAbsoluteUrl('/opengraph-image.png')],
+    },
+  };
+}
 
 export default async function StorefrontPage() {
   const { t, locale } = await getServerTranslations();
@@ -64,17 +118,21 @@ export default async function StorefrontPage() {
       })
     : t.sections.handBouquetsTitle;
 
+  const catalogLink = locale === 'ar' ? '/ar/products' : '/en/products';
+  const handBouquetsLink =
+    locale === 'ar' ? '/ar/categories/hand-bouquets' : '/en/categories/hand-bouquets';
+
   return (
     <div className="min-h-screen flex flex-col bg-cream-100 font-sans selection:bg-plum-800 selection:text-white w-full max-w-full overflow-x-hidden">
-      {/* 1. Announcement Bar */}
       <AnnouncementBar settings={settings} />
-
-      {/* 2. Main Navigation Header */}
       <Header />
+
+      <FloristJsonLd settings={settings} />
+      <WebSiteJsonLd />
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-full overflow-x-hidden">
-        {/* 3. Hero Section (Controlled via CMS) */}
+        {/* 3. Hero Section */}
         <HeroSection section={heroSection} />
 
         {/* 4. Value Proposition / Feature Bar */}
@@ -86,7 +144,7 @@ export default async function StorefrontPage() {
             title={newArrivalsTitle}
             subtitle={t.sections.newArrivalsSubtitle}
             products={newArrivals}
-            viewAllLink="/products"
+            viewAllLink={catalogLink}
           />
         )}
 
@@ -101,7 +159,7 @@ export default async function StorefrontPage() {
             title={handBouquetsTitle}
             subtitle={t.sections.handBouquetsSubtitle}
             products={handBouquets}
-            viewAllLink="/products?category=hand-bouquets"
+            viewAllLink={handBouquetsLink}
           />
         )}
 
@@ -113,7 +171,7 @@ export default async function StorefrontPage() {
           />
         )}
 
-        {/* 11. Promotional Category Cards Grid (Hampers, Combos, DIY) */}
+        {/* 11. Promotional Category Cards Grid */}
         <PromoCardsGrid categories={categories} section={sections.find((s) => s.section_key === 'promo_cards')} />
 
         {/* 12. Our Collections Circles */}

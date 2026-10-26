@@ -75,6 +75,73 @@ export async function getCategories(): Promise<Category[]> {
   return [];
 }
 
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  'use cache';
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, name_ar, slug, description, description_ar, image_url, sort_order, active, created_at')
+        .eq('slug', slug)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[Queries] Error fetching category by slug:', error.message);
+        return null;
+      }
+
+      return (data as Category) || null;
+    } catch (err) {
+      console.error('[Queries] Exception fetching category by slug:', err);
+      return null;
+    }
+  }
+
+  return null;
+}
+
+export async function getSubcategoryBySlug(
+  categorySlug: string,
+  subSlug: string
+): Promise<{ category: Category; subcategory: Collection } | null> {
+  'use cache';
+  const category = await getCategoryBySlug(categorySlug);
+  if (!category) return null;
+
+  const subcategory = await getCollectionBySlug(subSlug);
+  if (!subcategory) return null;
+
+  // Verify that products actually exist in this category for this subcategory
+  const products = await getProducts({
+    categorySlug,
+    flowerSlug: subSlug,
+    limit: 1,
+  });
+
+  if (products.length === 0) {
+    const occasionProducts = await getProducts({
+      categorySlug,
+      occasionSlug: subSlug,
+      limit: 1,
+    });
+    if (occasionProducts.length === 0) {
+      const colProducts = await getProducts({
+        categorySlug,
+        collectionSlug: subSlug,
+        limit: 1,
+      });
+      if (colProducts.length === 0) {
+        return null;
+      }
+    }
+  }
+
+  return { category, subcategory };
+}
+
+
 export async function getProducts(options?: {
   categorySlug?: string;
   occasionSlug?: string;

@@ -78,7 +78,7 @@ export function Footer({ settings }: FooterProps) {
 
           {/* Brand Column (always visible) */}
           <div className="lg:col-span-1 space-y-4 pb-6 md:pb-0 border-b border-plum-800/80 md:border-0">
-            <Link href="/" className="flex items-center">
+            <Link href={locale === 'ar' ? '/ar' : '/en'} className="flex items-center">
               <Image
                 src="/logo.png"
                 alt={storeName}
@@ -106,35 +106,35 @@ export function Footer({ settings }: FooterProps) {
           {/* Shop */}
           <FooterSection id="shop" title={t.footer.shopHeading} openId={openId} onToggle={toggle}>
             <ul className="space-y-3 md:space-y-2.5 text-xs text-plum-200">
-              <li><Link href="/products" className="hover:text-white transition-colors">{t.product.allFlowers}</Link></li>
-              <li><Link href="/products?category=hand-bouquets" className="hover:text-white transition-colors">{t.nav.handBouquets}</Link></li>
-              <li><Link href="/products?category=flowers-in-vase" className="hover:text-white transition-colors">{t.nav.flowersInVase}</Link></li>
-              <li><Link href="/products?category=premium-collections" className="hover:text-white transition-colors">{t.nav.premiumCollections}</Link></li>
-              <li><Link href="/products?category=gift-hampers" className="hover:text-white transition-colors">{t.nav.giftHampers}</Link></li>
-              <li><Link href="/products?category=combos" className="hover:text-white transition-colors">{t.nav.combos}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/products' : '/en/products'} className="hover:text-white transition-colors">{t.product.allFlowers}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/categories/hand-bouquets' : '/en/categories/hand-bouquets'} className="hover:text-white transition-colors">{t.nav.handBouquets}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/categories/flowers-in-vase' : '/en/categories/flowers-in-vase'} className="hover:text-white transition-colors">{t.nav.flowersInVase}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/categories/premium-collections' : '/en/categories/premium-collections'} className="hover:text-white transition-colors">{t.nav.premiumCollections}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/categories/gift-hampers' : '/en/categories/gift-hampers'} className="hover:text-white transition-colors">{t.nav.giftHampers}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/categories/combos' : '/en/categories/combos'} className="hover:text-white transition-colors">{t.nav.combos}</Link></li>
             </ul>
           </FooterSection>
 
           {/* Occasions */}
           <FooterSection id="occasions" title={t.footer.occasionsHeading} openId={openId} onToggle={toggle}>
             <ul className="space-y-3 md:space-y-2.5 text-xs text-plum-200">
-              <li><Link href="/products?occasion=birthday" className="hover:text-white transition-colors">{locale === 'ar' ? 'أعياد الميلاد' : 'Birthday'}</Link></li>
-              <li><Link href="/products?occasion=anniversary" className="hover:text-white transition-colors">{locale === 'ar' ? 'الذكرى السنوية' : 'Anniversary'}</Link></li>
-              <li><Link href="/products?occasion=love-romance" className="hover:text-white transition-colors">{locale === 'ar' ? 'حب ورومانسية' : 'Love & Romance'}</Link></li>
-              <li><Link href="/products?occasion=graduation" className="hover:text-white transition-colors">{locale === 'ar' ? 'التخرج والنجاح' : 'Graduation'}</Link></li>
-              <li><Link href="/products?occasion=get-well-soon" className="hover:text-white transition-colors">{locale === 'ar' ? 'سلامتك وشفاء عاجل' : 'Get Well Soon'}</Link></li>
-              <li><Link href="/products?occasion=thank-you" className="hover:text-white transition-colors">{locale === 'ar' ? 'شكر وتقدير' : 'Thank You'}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/products?occasion=birthday' : '/en/products?occasion=birthday'} className="hover:text-white transition-colors">{locale === 'ar' ? 'أعياد الميلاد' : 'Birthday'}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/products?occasion=anniversary' : '/en/products?occasion=anniversary'} className="hover:text-white transition-colors">{locale === 'ar' ? 'الذكرى السنوية' : 'Anniversary'}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/products?occasion=love-romance' : '/en/products?occasion=love-romance'} className="hover:text-white transition-colors">{locale === 'ar' ? 'حب ورومانسية' : 'Love & Romance'}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/products?occasion=graduation' : '/en/products?occasion=graduation'} className="hover:text-white transition-colors">{locale === 'ar' ? 'التخرج والنجاح' : 'Graduation'}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/products?occasion=get-well-soon' : '/en/products?occasion=get-well-soon'} className="hover:text-white transition-colors">{locale === 'ar' ? 'سلامتك وشفاء عاجل' : 'Get Well Soon'}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/products?occasion=thank-you' : '/en/products?occasion=thank-you'} className="hover:text-white transition-colors">{locale === 'ar' ? 'شكر وتقدير' : 'Thank You'}</Link></li>
             </ul>
           </FooterSection>
 
           {/* Support */}
           <FooterSection id="support" title={t.footer.supportHeading} openId={openId} onToggle={toggle}>
             <ul className="space-y-3 md:space-y-2.5 text-xs text-plum-200">
-              <li><Link href="/about" className="hover:text-white transition-colors">{t.common.aboutUs}</Link></li>
-              <li><Link href="/about" className="hover:text-white transition-colors">{t.common.deliveryInfo}</Link></li>
-              <li><Link href="/about" className="hover:text-white transition-colors">{t.common.refundPolicy}</Link></li>
-              <li><Link href="/about" className="hover:text-white transition-colors">{t.common.faq}</Link></li>
-              <li><Link href="/about" className="hover:text-white transition-colors">{t.common.contactUs}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/about' : '/en/about'} className="hover:text-white transition-colors">{t.common.aboutUs}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/about' : '/en/about'} className="hover:text-white transition-colors">{t.common.deliveryInfo}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/about' : '/en/about'} className="hover:text-white transition-colors">{t.common.refundPolicy}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/about' : '/en/about'} className="hover:text-white transition-colors">{t.common.faq}</Link></li>
+              <li><Link href={locale === 'ar' ? '/ar/about' : '/en/about'} className="hover:text-white transition-colors">{t.common.contactUs}</Link></li>
             </ul>
           </FooterSection>
 

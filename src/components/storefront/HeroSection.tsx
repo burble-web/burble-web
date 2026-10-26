@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowRight, Flower, Sparkles, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { ArrowRight, Flower, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
 import { HomepageSection } from '@/types';
 
@@ -61,6 +60,8 @@ export function HeroSection({ section }: HeroSectionProps) {
 
   const [mobileVideoError, setMobileVideoError] = useState(false);
   const [desktopVideoError, setDesktopVideoError] = useState(false);
+  const [isMobileVideoPlaying, setIsMobileVideoPlaying] = useState(false);
+  const [isDesktopVideoPlaying, setIsDesktopVideoPlaying] = useState(false);
 
   // If mobile video fails to load, gracefully fallback to desktop video
   const effectiveMobileVideo = !mobileVideoError && configuredMobileVideo
@@ -74,28 +75,71 @@ export function HeroSection({ section }: HeroSectionProps) {
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Autoplay reliability for iOS Safari & Android Chrome (requires DOM muted = true and explicit play())
-  useEffect(() => {
-    if (mobileVideoRef.current) {
-      mobileVideoRef.current.muted = true;
-      mobileVideoRef.current.defaultMuted = true;
-      const playPromise = mobileVideoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {});
+  const setupVideoElement = (el: HTMLVideoElement | null) => {
+    if (!el) return;
+    try {
+      el.muted = true;
+      el.defaultMuted = true;
+      el.playsInline = true;
+      el.setAttribute('muted', '');
+      el.setAttribute('playsinline', '');
+      el.setAttribute('webkit-playsinline', 'true');
+      el.setAttribute('x5-playsinline', 'true');
+      const p = el.play();
+      if (p !== undefined) {
+        p.catch(() => {});
       }
+    } catch {
+      // Ignore autoplay policy rejections
     }
-  }, [effectiveMobileVideo]);
+  };
 
+  // Autoplay reliability for iOS Safari (including Low Power Mode) & mobile browsers:
+  // When Low Power Mode or strict browser policy pauses autoplay,
+  // listening to touch, scroll, click, or tab visibility triggers playback seamlessly without user friction.
   useEffect(() => {
-    if (desktopVideoRef.current) {
-      desktopVideoRef.current.muted = true;
-      desktopVideoRef.current.defaultMuted = true;
-      const playPromise = desktopVideoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {});
+    if (mediaType !== 'video') return;
+
+    const attemptPlay = () => {
+      const mob = mobileVideoRef.current;
+      const desk = desktopVideoRef.current;
+      if (mob && mob.paused) {
+        mob.muted = true;
+        mob.play().catch(() => {});
       }
-    }
-  }, [effectiveDesktopVideo]);
+      if (desk && desk.paused) {
+        desk.muted = true;
+        desk.play().catch(() => {});
+      }
+    };
+
+    // Try immediately on mount / URL change
+    attemptPlay();
+
+    // Trigger on user interactions (unlocks iOS Safari Low Power Mode restriction)
+    const onUserInteraction = () => {
+      attemptPlay();
+    };
+
+    // Auto resume if user switches between apps (e.g. returning from WhatsApp)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        attemptPlay();
+      }
+    };
+
+    window.addEventListener('touchstart', onUserInteraction, { passive: true });
+    window.addEventListener('scroll', onUserInteraction, { passive: true });
+    window.addEventListener('click', onUserInteraction, { passive: true });
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      window.removeEventListener('touchstart', onUserInteraction);
+      window.removeEventListener('scroll', onUserInteraction);
+      window.removeEventListener('click', onUserInteraction);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [mediaType, effectiveMobileVideo, effectiveDesktopVideo]);
 
   // Determine Slides (Up to 3 images moving one by one)
   const configuredSlides = Array.isArray(content.slides) && content.slides.length > 0
@@ -131,56 +175,122 @@ export function HeroSection({ section }: HeroSectionProps) {
   const fallbackDesktopPoster = slides[0]?.desktop_image || slides[0]?.desktopImage || DEFAULT_SLIDES[0].desktop_image;
   const fallbackMobilePoster = slides[0]?.mobile_image || slides[0]?.mobileImage || fallbackDesktopPoster;
 
+  const handleBannerTap = () => {
+    if (mediaType !== 'video') return;
+    const mob = mobileVideoRef.current;
+    const desk = desktopVideoRef.current;
+    if (mob && mob.paused) mob.play().catch(() => {});
+    if (desk && desk.paused) desk.play().catch(() => {});
+  };
+
   return (
     <section
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleBannerTap}
       className="relative w-full overflow-hidden bg-plum-950 text-white min-h-[600px] md:min-h-[540px] lg:min-h-[620px] flex items-end md:items-center select-none"
     >
       {/* 1. MEDIA LAYER: Video Mode vs Rotating 3 Images */}
       {mediaType === 'video' && (effectiveDesktopVideo || effectiveMobileVideo) ? (
         <div className="absolute inset-0 z-0 overflow-hidden">
-          {/* Laptop Screen Video */}
+          {/* Static High-Res Poster Layer: always rendered underneath so there is never a black frame or play overlay */}
+          <picture className="absolute inset-0 w-full h-full block">
+            <source media="(min-width: 768px)" srcSet={fallbackDesktopPoster} />
+            <source media="(max-width: 767px)" srcSet={fallbackMobilePoster} />
+            <img
+              src={fallbackDesktopPoster}
+              alt={title ? `${title} — Burble Flowers Qatar` : "Burble Luxury Fresh Flowers Qatar"}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="w-full h-full object-cover object-top md:object-right lg:object-center brightness-90"
+            />
+          </picture>
+
+          {/* Desktop Screen Video */}
           {effectiveDesktopVideo && (
             <video
-              ref={desktopVideoRef}
-              src={effectiveDesktopVideo}
+              ref={(el) => {
+                desktopVideoRef.current = el;
+                setupVideoElement(el);
+              }}
+              key={effectiveDesktopVideo}
               autoPlay
               loop
               muted
               playsInline
+              {...({ 'webkit-playsinline': 'true', 'x5-playsinline': 'true' } as Record<string, string>)}
               preload="auto"
-              poster={fallbackDesktopPoster}
+              disablePictureInPicture
+              disableRemotePlayback
+              aria-hidden="true"
+              tabIndex={-1}
+              onPlaying={() => setIsDesktopVideoPlaying(true)}
+              onTimeUpdate={(e) => {
+                if (e.currentTarget.currentTime > 0) setIsDesktopVideoPlaying(true);
+              }}
               onError={() => setDesktopVideoError(true)}
-              className="hidden md:block w-full h-full object-cover brightness-90"
-            />
+              className={`hidden md:block w-full h-full object-cover brightness-90 transition-opacity duration-700 pointer-events-none ${
+                isDesktopVideoPlaying ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <source src={effectiveDesktopVideo} type="video/mp4" />
+            </video>
           )}
+
           {/* Mobile Screen Video */}
           {effectiveMobileVideo && (
             <video
-              ref={mobileVideoRef}
-              src={effectiveMobileVideo}
+              ref={(el) => {
+                mobileVideoRef.current = el;
+                setupVideoElement(el);
+              }}
+              key={effectiveMobileVideo}
               autoPlay
               loop
               muted
               playsInline
+              {...({ 'webkit-playsinline': 'true', 'x5-playsinline': 'true' } as Record<string, string>)}
               preload="auto"
-              poster={fallbackMobilePoster}
+              disablePictureInPicture
+              disableRemotePlayback
+              aria-hidden="true"
+              tabIndex={-1}
+              onPlaying={() => setIsMobileVideoPlaying(true)}
+              onTimeUpdate={(e) => {
+                if (e.currentTarget.currentTime > 0) setIsMobileVideoPlaying(true);
+              }}
               onError={() => setMobileVideoError(true)}
-              className="md:hidden w-full h-full object-cover brightness-90"
-            />
+              className={`md:hidden w-full h-full object-cover brightness-90 transition-opacity duration-700 pointer-events-none ${
+                isMobileVideoPlaying ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <source src={effectiveMobileVideo} type="video/mp4" />
+            </video>
           )}
+
           {/* Readability Gradient Overlays */}
-          <div className={`hidden md:block absolute inset-0 ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/95 via-plum-950/60 to-transparent w-full md:w-3/4`} />
-          <div className="md:hidden absolute inset-0 bg-gradient-to-t from-plum-950/95 via-plum-950/70 to-transparent" />
+          <div className={`hidden md:block absolute inset-0 pointer-events-none ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/95 via-plum-950/60 to-transparent w-full md:w-3/4`} />
+          <div className="md:hidden absolute inset-0 pointer-events-none bg-gradient-to-t from-plum-950/95 via-plum-950/70 to-transparent" />
         </div>
       ) : (
         /* Rotating Images Carousel (3 images moving one by one) */
         <div className="absolute inset-0 z-0 overflow-hidden">
-          {slides.map((slide: any, idx: number) => {
+          {slides.map(
+            (
+              slide: {
+                desktop_image?: string;
+                desktopImage?: string;
+                url?: string;
+                mobile_image?: string;
+                mobileImage?: string;
+              },
+              idx: number
+            ) => {
             const isActive = idx === currentSlide;
             const desktopSrc = slide.desktop_image || slide.desktopImage || slide.url || DEFAULT_SLIDES[idx]?.desktop_image;
             const mobileSrc = slide.mobile_image || slide.mobileImage || desktopSrc || DEFAULT_SLIDES[idx]?.mobile_image;
+            const isLcp = idx === 0;
 
             return (
               <div
@@ -189,29 +299,23 @@ export function HeroSection({ section }: HeroSectionProps) {
                   isActive ? 'opacity-100 z-1 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
-                {/* Laptop Screen Image (16:9 Ratio Viewport) */}
-                <div className="hidden md:block absolute inset-0">
-                  <Image
+                {/* Responsive picture element: browser only requests matching viewport image */}
+                <picture className="absolute inset-0 w-full h-full block">
+                  <source media="(min-width: 768px)" srcSet={desktopSrc} />
+                  <source media="(max-width: 767px)" srcSet={mobileSrc} />
+                  <img
                     src={desktopSrc}
-                    alt={title || `Burble Hero Slide ${idx + 1}`}
-                    fill
-                    priority={idx === 0}
-                    className="object-cover object-right lg:object-center brightness-90"
+                    alt={title ? `${title} — Burble Flowers Qatar` : `Burble Luxury Fresh Flowers Hero ${idx + 1}`}
+                    loading={isLcp ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={isLcp ? 'high' : 'low'}
+                    className="w-full h-full object-cover object-top md:object-right lg:object-center brightness-90"
                   />
-                  <div className={`absolute inset-0 ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/95 via-plum-950/60 to-transparent w-full md:w-3/4`} />
-                </div>
+                </picture>
 
-                {/* Mobile Screen Image (9:16 Ratio Viewport) */}
-                <div className="md:hidden absolute inset-0">
-                  <Image
-                    src={mobileSrc}
-                    alt={title || `Burble Hero Slide ${idx + 1}`}
-                    fill
-                    priority={idx === 0}
-                    className="object-cover object-top brightness-90"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-plum-950/95 via-plum-950/70 to-transparent" />
-                </div>
+                {/* Readability Gradient Overlays */}
+                <div className={`hidden md:block absolute inset-0 ${isRtl ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-plum-950/95 via-plum-950/60 to-transparent w-full md:w-3/4 pointer-events-none`} />
+                <div className="md:hidden absolute inset-0 bg-gradient-to-t from-plum-950/95 via-plum-950/70 to-transparent pointer-events-none" />
               </div>
             );
           })}
