@@ -110,3 +110,15 @@ html[lang="ar"] .font-sans {
   scrollbar-width: none;
 }
 
+/* Prevent iOS Safari / WebKit native video play button overlays and controls */
+video::-webkit-media-controls,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+

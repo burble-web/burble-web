@@ -14,7 +14,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
-  const { t, formatPrice, getLocalized } = useLocale();
+  const { locale, t, formatPrice, getLocalized } = useLocale();
   const [added, setAdded] = React.useState(false);
 
   const productName = getLocalized(product.name, product.name_ar);
@@ -32,7 +32,10 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="min-w-0">
         {/* Image Container — Consistent aspect-square with object-fit cover */}
         <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-cream-100 mb-2 sm:mb-3 shrink-0">
-          <Link href={`/products/${product.slug}`} className="block w-full h-full">
+          <Link
+            href={locale === 'ar' ? `/ar/products/${product.slug}` : `/en/products/${product.slug}`}
+            className="block w-full h-full"
+          >
             <Image
               src={product.main_image_url}
               alt={productName}
@@ -68,7 +71,10 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Title — Reserved fixed height for 2 lines so cards stay equal height */}
-        <Link href={`/products/${product.slug}`} className="block min-w-0">
+        <Link
+          href={locale === 'ar' ? `/ar/products/${product.slug}` : `/en/products/${product.slug}`}
+          className="block min-w-0"
+        >
           <h3 className="font-serif text-xs sm:text-sm font-medium text-plum-900 line-clamp-2 h-8 sm:h-9 group-hover:text-plum-700 transition-colors leading-snug">
             {productName}
           </h3>

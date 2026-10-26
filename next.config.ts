@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  trailingSlash: false,
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
@@ -24,6 +24,25 @@ const nextConfig: NextConfig = {
         hostname: 'res.cloudinary.com',
       },
     ],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/categories',
+        destination: '/products',
+        permanent: true,
+      },
+      {
+        source: '/en/categories',
+        destination: '/en/products',
+        permanent: true,
+      },
+      {
+        source: '/ar/categories',
+        destination: '/ar/products',
+        permanent: true,
+      },
+    ];
   },
 };
 

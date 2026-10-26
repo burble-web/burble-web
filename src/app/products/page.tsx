@@ -1,14 +1,114 @@
 import React from 'react';
+import Link from 'next/link';
+import type { Metadata } from 'next';
 import { AnnouncementBar } from '@/components/storefront/AnnouncementBar';
 import { Header } from '@/components/storefront/Header';
 import { Footer } from '@/components/storefront/Footer';
 import { ProductCard } from '@/components/storefront/ProductCard';
-import { getSiteSettings, getProducts, getCategories, getCollectionBySlug } from '@/lib/data/queries';
-import { getServerTranslations } from '@/lib/i18n/server';
+import {
+  getSiteSettings,
+  getProducts,
+  getCategories,
+  getCollectionBySlug,
+} from '@/lib/data/queries';
+import { getServerTranslations, getServerLocale } from '@/lib/i18n/server';
 import { getLocalizedValue } from '@/lib/i18n/utils';
-import Link from 'next/link';
+import { buildHreflangAlternates, buildAbsoluteUrl } from '@/lib/seo/helpers';
+import { BreadcrumbJsonLd, CollectionPageJsonLd } from '@/components/seo/JsonLd';
 
 export const instant = false;
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    occasion?: string;
+    flower?: string;
+    collection?: string;
+    q?: string;
+    sort?: string;
+  }>;
+}): Promise<Metadata> {
+  const resolvedParams = await searchParams;
+  const locale = await getServerLocale();
+
+  let title =
+    locale === 'ar'
+      ? 'كتالوج الزهور الطبيعية والباقات الفاخرة | زهور بيربل قطر'
+      : 'Fresh Flowers & Luxury Bouquets Catalog | Burble Flowers Qatar';
+
+  let description =
+    locale === 'ar'
+      ? 'تصفح تشكيلة زهور بيربل الكاملة من باقات اليد الفاخرة، زهور الفازات، وصناديق الهدايا مع توصيل سريع في نفس اليوم في قطر.'
+      : 'Browse Burble Flowers complete luxury collection of fresh bouquets, vase arrangements, and floral gift sets with express same-day delivery across Doha.';
+
+  if (resolvedParams?.occasion || resolvedParams?.flower || resolvedParams?.collection) {
+    const slug = resolvedParams.occasion || resolvedParams.flower || resolvedParams.collection;
+    if (slug) {
+      const col = await getCollectionBySlug(slug);
+      if (col) {
+        const colTitle = getLocalizedValue({
+          locale,
+          english: col.title,
+          arabic: col.title_ar,
+        });
+        title =
+          locale === 'ar'
+            ? `${colTitle} — تشكيلة الزهور الطبيعية | زهور بيربل قطر`
+            : `${colTitle} Floral Collection in Qatar | Burble Flowers`;
+      }
+    }
+  } else if (resolvedParams?.q) {
+    title =
+      locale === 'ar'
+        ? `نتائج البحث عن "${resolvedParams.q}" | زهور بيربل قطر`
+        : `Search Results for "${resolvedParams.q}" | Burble Flowers Qatar`;
+  }
+
+  // Canonical always points to clean canonical without search/sort query pollution
+  const alternates = buildHreflangAlternates({
+    pathWithoutLocale: '/products',
+    currentLocale: locale,
+  });
+
+  const canonicalUrl =
+    locale === 'ar' ? buildAbsoluteUrl('/ar/products') : buildAbsoluteUrl('/en/products');
+
+  // If there are search or filter parameters, apply noindex, follow to avoid duplicate search result indexation
+  const isFilteredOrSearch = Boolean(resolvedParams?.q || resolvedParams?.sort);
+
+  return {
+    title,
+    description,
+    alternates,
+    robots: isFilteredOrSearch
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'Burble Flowers',
+      locale: locale === 'ar' ? 'ar_QA' : 'en_US',
+      alternateLocale: locale === 'ar' ? ['en_US'] : ['ar_QA'],
+      type: 'website',
+      images: [
+        {
+          url: buildAbsoluteUrl('/opengraph-image.png'),
+          width: 1200,
+          height: 630,
+          alt: 'Burble Flowers Catalog',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [buildAbsoluteUrl('/opengraph-image.png')],
+    },
+  };
+}
 
 export default async function ProductsPage({
   searchParams,
@@ -61,7 +161,7 @@ export default async function ProductsPage({
     currentTitle = locale === 'ar' ? `نتائج البحث: "${resolvedParams.q}"` : `Search: "${resolvedParams.q}"`;
   }
 
-  // Filter by search query if provided (supporting both English and Arabic query matching)
+  // Filter by search query if provided
   if (resolvedParams?.q) {
     const q = resolvedParams.q.toLowerCase().trim();
     products = products.filter((p) => {
@@ -93,25 +193,67 @@ export default async function ProductsPage({
     resolvedParams?.q
   );
 
+  const canonicalUrl =
+    locale === 'ar' ? buildAbsoluteUrl('/ar/products') : buildAbsoluteUrl('/en/products');
+
+  const breadcrumbs = [
+    {
+      name: t.common.home,
+      url: locale === 'ar' ? buildAbsoluteUrl('/ar') : buildAbsoluteUrl('/en'),
+    },
+    {
+      name: t.common.catalog,
+      url: canonicalUrl,
+    },
+  ];
+
+  if (hasActiveFilter && currentTitle !== t.product.allFlowers) {
+    breadcrumbs.push({
+      name: currentTitle,
+      url: canonicalUrl,
+    });
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-cream-100 font-sans">
       <AnnouncementBar settings={settings} />
       <Header />
 
+      <BreadcrumbJsonLd items={breadcrumbs} />
+      <CollectionPageJsonLd
+        title={`${t.common.catalog} — Burble Flowers Qatar`}
+        description="Fresh luxury floral collection delivered across Doha."
+        url={canonicalUrl}
+        products={products}
+      />
+
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
         {/* Header Breadcrumb & Title */}
         <div className="mb-8">
-          <div className="text-xs text-ink-500 mb-2 flex items-center space-x-1.5 rtl:space-x-reverse">
-            <Link href="/" className="hover:text-plum-800">{t.common.home}</Link>
+          <nav
+            aria-label="Breadcrumb"
+            className="text-xs text-ink-500 mb-2 flex items-center space-x-1.5 rtl:space-x-reverse"
+          >
+            <Link
+              href={locale === 'ar' ? '/ar' : '/en'}
+              className="hover:text-plum-800 transition-colors"
+            >
+              {t.common.home}
+            </Link>
             <span>/</span>
-            <Link href="/products" className="hover:text-plum-800">{t.common.catalog}</Link>
+            <Link
+              href={locale === 'ar' ? '/ar/products' : '/en/products'}
+              className="hover:text-plum-800 transition-colors"
+            >
+              {t.common.catalog}
+            </Link>
             {hasActiveFilter && (
               <>
                 <span>/</span>
                 <span className="text-plum-900 font-semibold">{currentTitle}</span>
               </>
             )}
-          </div>
+          </nav>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-plum-900">
             {currentTitle}
           </h1>
@@ -120,10 +262,10 @@ export default async function ProductsPage({
           </p>
         </div>
 
-        {/* Category Pills & Filters */}
+        {/* Category Pills & Filters: Pointing to clean category URLs */}
         <div className="flex flex-wrap items-center gap-2 mb-8 border-b border-ink-100 pb-4">
           <Link
-            href="/products"
+            href={locale === 'ar' ? '/ar/products' : '/en/products'}
             className={`px-4 py-2 text-xs font-semibold rounded-full transition-colors ${
               !hasActiveFilter
                 ? 'bg-plum-900 text-white shadow-xs'
@@ -140,10 +282,15 @@ export default async function ProductsPage({
               arabic: cat.name_ar,
             });
             const isSelected = resolvedParams?.category === cat.slug;
+            const catHref =
+              locale === 'ar'
+                ? `/ar/categories/${cat.slug}`
+                : `/en/categories/${cat.slug}`;
+
             return (
               <Link
                 key={cat.id}
-                href={`/products?category=${cat.slug}`}
+                href={catHref}
                 className={`px-4 py-2 text-xs font-semibold rounded-full transition-colors ${
                   isSelected
                     ? 'bg-plum-900 text-white shadow-xs'
@@ -166,7 +313,7 @@ export default async function ProductsPage({
                 : 'Try clearing your filters to explore all handcrafted bouquets.'}
             </p>
             <Link
-              href="/products"
+              href={locale === 'ar' ? '/ar/products' : '/en/products'}
               className="px-6 py-2.5 bg-plum-800 text-white text-xs font-semibold rounded-lg hover:bg-plum-900"
             >
               {t.product.clearFilters}
