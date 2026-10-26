@@ -32,19 +32,20 @@ export function LocaleProvider({
   children: React.ReactNode;
   initialLocale?: Locale;
 }) {
-  const [locale, setLocaleState] = useState<Locale>(initialLocale);
+  const [locale, setLocaleState] = useState<Locale>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const pathname = window.location.pathname;
+        if (pathname.startsWith('/ar')) return 'ar';
+        if (pathname.startsWith('/en')) return 'en';
+        const match = document.cookie.match(/(?:^|;\s*)burble_locale=([^;]+)/);
+        const saved = match ? decodeURIComponent(match[1]) : null;
+        if (saved && isValidLocale(saved)) return saved;
+      } catch {}
+    }
+    return initialLocale;
+  });
   const router = useRouter();
-
-  // Read saved locale cookie on initial mount
-  useEffect(() => {
-    try {
-      const match = document.cookie.match(/(?:^|;\s*)burble_locale=([^;]+)/);
-      const saved = match ? decodeURIComponent(match[1]) : null;
-      if (saved && isValidLocale(saved) && saved !== locale) {
-        setLocaleState(saved);
-      }
-    } catch {}
-  }, []);
 
   // Sync client state with document attributes
   useEffect(() => {
@@ -77,8 +78,26 @@ export function LocaleProvider({
         document.documentElement.classList.remove('rtl');
       }
 
-      // 4. Refresh router so server components re-render with the new cookie
-      router.refresh();
+      // 4. Navigate to matching localized URL
+      try {
+        const currentPath = window.location.pathname;
+        const search = window.location.search;
+        let newPath = currentPath;
+
+        if (currentPath.startsWith('/en')) {
+          newPath = currentPath.replace(/^\/en/, `/${newLocale}`);
+        } else if (currentPath.startsWith('/ar')) {
+          newPath = currentPath.replace(/^\/ar/, `/${newLocale}`);
+        } else if (currentPath === '/') {
+          newPath = `/${newLocale}`;
+        } else if (!currentPath.startsWith('/admin')) {
+          newPath = `/${newLocale}${currentPath}`;
+        }
+
+        router.push(`${newPath}${search}`);
+      } catch {
+        router.refresh();
+      }
     },
     [locale, router]
   );

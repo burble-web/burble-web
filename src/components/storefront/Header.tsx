@@ -113,7 +113,7 @@ export function Header() {
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <Link href="/" className="flex items-center">
+              <Link href={locale === 'ar' ? '/ar' : '/en'} className="flex items-center">
                 <Image
                   src="/logo.png"
                   alt="BURBLE"
@@ -127,7 +127,7 @@ export function Header() {
 
             {/* Desktop Logo */}
             <div className="hidden lg:flex items-center shrink-0">
-              <Link href="/" className="flex items-center group">
+              <Link href={locale === 'ar' ? '/ar' : '/en'} className="flex items-center group">
                 <Image
                   src="/logo.png"
                   alt="BURBLE"
@@ -142,50 +142,95 @@ export function Header() {
             {/* Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-medium text-ink-700 whitespace-nowrap">
               <div className="relative group py-2">
-                <Link href="/products" className="flex items-center space-x-1 rtl:space-x-reverse hover:text-plum-800 transition-colors">
+                <Link
+                  href={locale === 'ar' ? '/ar/products' : '/en/products'}
+                  className="flex items-center space-x-1 rtl:space-x-reverse hover:text-plum-800 transition-colors"
+                >
                   <span>{t.common.occasions}</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60 group-hover:rotate-180 transition-transform" />
                 </Link>
                 <div className="absolute top-full start-0 hidden group-hover:block w-48 bg-white shadow-xl rounded-xl p-2 border border-ink-100 z-50">
-                  <Link href="/products?occasion=birthday" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?occasion=birthday' : '/en/products?occasion=birthday'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'أعياد الميلاد' : 'Birthday'}
                   </Link>
-                  <Link href="/products?occasion=anniversary" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?occasion=anniversary' : '/en/products?occasion=anniversary'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'الذكرى السنوية' : 'Anniversary'}
                   </Link>
-                  <Link href="/products?occasion=graduation" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?occasion=graduation' : '/en/products?occasion=graduation'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'التخرج والنجاح' : 'Graduation'}
                   </Link>
-                  <Link href="/products?occasion=love-romance" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?occasion=love-romance' : '/en/products?occasion=love-romance'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'حب ورومانسية' : 'Love & Romance'}
                   </Link>
                 </div>
               </div>
 
               <div className="relative group py-2">
-                <Link href="/products" className="flex items-center space-x-1 rtl:space-x-reverse hover:text-plum-800 transition-colors">
+                <Link
+                  href={locale === 'ar' ? '/ar/products' : '/en/products'}
+                  className="flex items-center space-x-1 rtl:space-x-reverse hover:text-plum-800 transition-colors"
+                >
                   <span>{t.nav.shopByFlowerDropdown}</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60 group-hover:rotate-180 transition-transform" />
                 </Link>
                 <div className="absolute top-full start-0 hidden group-hover:block w-48 bg-white shadow-xl rounded-xl p-2 border border-ink-100 z-50">
-                  <Link href="/products?flower=roses" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?flower=roses' : '/en/products?flower=roses'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'الجوري والورد' : 'Roses'}
                   </Link>
-                  <Link href="/products?flower=lilies" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?flower=lilies' : '/en/products?flower=lilies'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'الزنبق (الليلي)' : 'Lilies'}
                   </Link>
-                  <Link href="/products?flower=peonies" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?flower=peonies' : '/en/products?flower=peonies'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'الفاونيا (البيوني)' : 'Peonies'}
                   </Link>
-                  <Link href="/products?flower=tulips" className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800">
+                  <Link
+                    href={locale === 'ar' ? '/ar/products?flower=tulips' : '/en/products?flower=tulips'}
+                    className="block px-3 py-2 text-xs rounded-lg hover:bg-plum-50 hover:text-plum-800"
+                  >
                     {locale === 'ar' ? 'التوليب' : 'Tulips'}
                   </Link>
                 </div>
               </div>
 
-              <Link href="/products?category=gift-hampers" className="hover:text-plum-800 transition-colors">{t.nav.giftHampers}</Link>
-              <Link href="/products?category=combos" className="hover:text-plum-800 transition-colors">{t.nav.combos}</Link>
-              <Link href="/about" className="hover:text-plum-800 transition-colors">{t.common.about}</Link>
+              <Link
+                href={locale === 'ar' ? '/ar/categories/gift-hampers' : '/en/categories/gift-hampers'}
+                className="hover:text-plum-800 transition-colors"
+              >
+                {t.nav.giftHampers}
+              </Link>
+              <Link
+                href={locale === 'ar' ? '/ar/categories/combos' : '/en/categories/combos'}
+                className="hover:text-plum-800 transition-colors"
+              >
+                {t.nav.combos}
+              </Link>
+              <Link
+                href={locale === 'ar' ? '/ar/about' : '/en/about'}
+                className="hover:text-plum-800 transition-colors"
+              >
+                {t.common.about}
+              </Link>
             </nav>
 
             {/* Right Action Icons, Search & Language Switcher */}
@@ -353,7 +398,7 @@ export function Header() {
           <div className={`fixed inset-y-0 ${isRtl ? 'right-0' : 'left-0'} max-w-xs w-full bg-cream-100 shadow-2xl p-6 flex flex-col justify-between overflow-y-auto`}>
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-ink-100">
-                <Link href="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
+                <Link href={locale === 'ar' ? '/ar' : '/en'} className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
                   <Image
                     src="/logo.png"
                     alt="BURBLE"
@@ -377,42 +422,42 @@ export function Header() {
 
               <nav className="space-y-3">
                 <Link
-                  href="/products"
+                  href={locale === 'ar' ? '/ar/products' : '/en/products'}
                   className="block text-base font-medium text-ink-900 hover:text-plum-800"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t.nav.allProducts}
                 </Link>
                 <Link
-                  href="/products?category=hand-bouquets"
+                  href={locale === 'ar' ? '/ar/categories/hand-bouquets' : '/en/categories/hand-bouquets'}
                   className="block text-base font-medium text-ink-900 hover:text-plum-800"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t.nav.handBouquets}
                 </Link>
                 <Link
-                  href="/products?category=flowers-in-vase"
+                  href={locale === 'ar' ? '/ar/categories/flowers-in-vase' : '/en/categories/flowers-in-vase'}
                   className="block text-base font-medium text-ink-900 hover:text-plum-800"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t.nav.flowersInVase}
                 </Link>
                 <Link
-                  href="/products?category=premium-collections"
+                  href={locale === 'ar' ? '/ar/categories/premium-collections' : '/en/categories/premium-collections'}
                   className="block text-base font-medium text-ink-900 hover:text-plum-800"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t.nav.premiumCollections}
                 </Link>
                 <Link
-                  href="/products?category=gift-hampers"
+                  href={locale === 'ar' ? '/ar/categories/gift-hampers' : '/en/categories/gift-hampers'}
                   className="block text-base font-medium text-ink-900 hover:text-plum-800"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t.nav.giftHampers}
                 </Link>
                 <Link
-                  href="/about"
+                  href={locale === 'ar' ? '/ar/about' : '/en/about'}
                   className="block text-base font-medium text-ink-900 hover:text-plum-800"
                   onClick={() => setMobileMenuOpen(false)}
                 >

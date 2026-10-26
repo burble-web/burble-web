@@ -14,7 +14,7 @@ interface PromoCardsGridProps {
 }
 
 export function PromoCardsGrid({ categories = [], section }: PromoCardsGridProps) {
-  const { t, isRtl } = useLocale();
+  const { t, isRtl, locale } = useLocale();
   const {
     containerRef,
     canScrollPrev,
@@ -38,21 +38,21 @@ export function PromoCardsGrid({ categories = [], section }: PromoCardsGridProps
       title: t.sections.giftHampersTitle,
       subtitle: t.sections.giftHampersSubtitle,
       buttonText: t.sections.shopGiftsCta,
-      link: '/products?category=gift-hampers',
+      link: locale === 'ar' ? '/ar/categories/gift-hampers' : '/en/categories/gift-hampers',
       imageUrl: giftImage,
     },
     {
       title: t.sections.combosTitle,
       subtitle: t.sections.combosSubtitle,
       buttonText: t.sections.shopCombosCta,
-      link: '/products?category=combos',
+      link: locale === 'ar' ? '/ar/categories/combos' : '/en/categories/combos',
       imageUrl: combosImage,
     },
     {
       title: t.sections.diyFlowersTitle,
       subtitle: t.sections.diyFlowersSubtitle,
       buttonText: t.sections.shopDiyCta,
-      link: '/products?category=diy-flowers',
+      link: locale === 'ar' ? '/ar/categories/diy-flowers' : '/en/categories/diy-flowers',
       imageUrl: diyImage,
     },
   ];

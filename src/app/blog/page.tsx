@@ -1,5 +1,5 @@
 import React from 'react';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, ArrowLeft, BookOpen, Calendar, User } from 'lucide-react';
@@ -7,25 +7,61 @@ import { AnnouncementBar } from '@/components/storefront/AnnouncementBar';
 import { Header } from '@/components/storefront/Header';
 import { Footer } from '@/components/storefront/Footer';
 import { getSiteSettings, getBlogPosts } from '@/lib/data/queries';
-import { getServerTranslations } from '@/lib/i18n/server';
+import { getServerTranslations, getServerLocale } from '@/lib/i18n/server';
 import { getLocalizedValue, formatDate } from '@/lib/i18n/utils';
+import { buildHreflangAlternates, buildAbsoluteUrl } from '@/lib/seo/helpers';
+import { BreadcrumbJsonLd } from '@/components/seo/JsonLd';
 
 export const instant = false;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { t, locale } = await getServerTranslations();
+  const { t } = await getServerTranslations();
+  const locale = await getServerLocale();
+
+  const title =
+    locale === 'ar'
+      ? 'مدونة بيربل للزهور | أسرار ونصائح العناية بالزهور في قطر'
+      : 'Florist Blog & Flower Care Guides | Burble Flowers Qatar';
+
+  const description =
+    locale === 'ar'
+      ? 'استكشف مقالات ونصائح خبراء تنسيق الزهور في قطر، دليلك للعناية بالزهور الطبيعية، وأفكار الهدايا لمختلف المناسبات السعيدة.'
+      : 'Explore expert floral tips, bouquet styling guides, and seasonal flower inspiration in Qatar from the florists at Burble Flowers.';
+
+  const alternates = buildHreflangAlternates({
+    pathWithoutLocale: '/blog',
+    currentLocale: locale,
+  });
+
+  const canonicalUrl =
+    locale === 'ar' ? buildAbsoluteUrl('/ar/blog') : buildAbsoluteUrl('/en/blog');
+
   return {
-    title: `${t.sections.fromOurBlogTitle} | Burble Flowers Qatar`,
-    description: t.sections.fromOurBlogSubtitle,
+    title,
+    description,
+    alternates,
     openGraph: {
-      title: `${t.sections.fromOurBlogTitle} | Burble Flowers`,
-      description: t.sections.fromOurBlogSubtitle,
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'Burble Flowers',
+      locale: locale === 'ar' ? 'ar_QA' : 'en_US',
+      alternateLocale: locale === 'ar' ? ['en_US'] : ['ar_QA'],
+      type: 'website',
+      images: [
+        {
+          url: buildAbsoluteUrl('/opengraph-image.png'),
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
-    alternates: {
-      languages: {
-        en: '/blog',
-        ar: '/blog',
-      },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [buildAbsoluteUrl('/opengraph-image.png')],
     },
   };
 }
@@ -35,18 +71,39 @@ export default async function BlogIndexPage() {
   const { t, locale, direction } = await getServerTranslations();
   const posts = await getBlogPosts(50);
 
+  const breadcrumbs = [
+    {
+      name: t.common.home,
+      url: locale === 'ar' ? buildAbsoluteUrl('/ar') : buildAbsoluteUrl('/en'),
+    },
+    {
+      name: t.sections.fromOurBlogTitle,
+      url: locale === 'ar' ? buildAbsoluteUrl('/ar/blog') : buildAbsoluteUrl('/en/blog'),
+    },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-cream-100 font-sans">
       <AnnouncementBar settings={settings} />
       <Header />
 
+      <BreadcrumbJsonLd items={breadcrumbs} />
+
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         {/* Breadcrumb */}
-        <div className="text-xs text-ink-500 mb-4 flex items-center space-x-1.5 rtl:space-x-reverse">
-          <Link href="/" className="hover:text-plum-800">{t.common.home}</Link>
+        <nav
+          aria-label="Breadcrumb"
+          className="text-xs text-ink-500 mb-4 flex items-center space-x-1.5 rtl:space-x-reverse"
+        >
+          <Link
+            href={locale === 'ar' ? '/ar' : '/en'}
+            className="hover:text-plum-800 transition-colors"
+          >
+            {t.common.home}
+          </Link>
           <span>/</span>
           <span className="text-plum-900 font-semibold">{t.sections.fromOurBlogTitle}</span>
-        </div>
+        </nav>
 
         {/* Page Heading */}
         <div className="max-w-3xl mb-12">
@@ -71,7 +128,7 @@ export default async function BlogIndexPage() {
                 : 'Check back soon for flower care guides and floral arrangement tips.'}
             </p>
             <Link
-              href="/products"
+              href={locale === 'ar' ? '/ar/products' : '/en/products'}
               className="px-6 py-2.5 bg-plum-900 text-white text-xs font-semibold rounded-full hover:bg-plum-800"
             >
               {t.cart.startShopping}
@@ -90,11 +147,15 @@ export default async function BlogIndexPage() {
                 english: post.excerpt,
                 arabic: post.excerpt_ar,
               });
-              const author = getLocalizedValue({
-                locale,
-                english: post.author,
-                arabic: post.author_ar,
-              }) || 'Burble Florist';
+              const author =
+                getLocalizedValue({
+                  locale,
+                  english: post.author,
+                  arabic: post.author_ar,
+                }) || 'Burble Florist';
+
+              const postHref =
+                locale === 'ar' ? `/ar/blog/${post.slug}` : `/en/blog/${post.slug}`;
 
               return (
                 <article
@@ -108,6 +169,7 @@ export default async function BlogIndexPage() {
                           src={post.cover_image}
                           alt={title}
                           fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
@@ -129,7 +191,7 @@ export default async function BlogIndexPage() {
                         )}
                       </div>
 
-                      <Link href={`/blog/${post.slug}`}>
+                      <Link href={postHref}>
                         <h2 className="font-serif text-lg font-bold text-plum-900 group-hover:text-plum-700 transition-colors line-clamp-2 leading-snug">
                           {title}
                         </h2>
@@ -143,7 +205,7 @@ export default async function BlogIndexPage() {
 
                   <div className="px-6 pb-6 pt-0">
                     <Link
-                      href={`/blog/${post.slug}`}
+                      href={postHref}
                       className="inline-flex items-center space-x-1.5 rtl:space-x-reverse text-xs font-semibold text-plum-800 hover:text-plum-900 group-hover:underline"
                     >
                       <span>{t.common.readMore}</span>
